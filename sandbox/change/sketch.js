@@ -37,6 +37,7 @@ function draw() {
 
   // Calculate normalized acc
   let ncd = abs(cd - _cd) / cd;
+  console.log(ncd);
 
   if (ncd) {
     let xccd = ncd * 100;
@@ -55,7 +56,7 @@ function draw() {
     //aspeed *= 10;
     // Should I follow or not?
     follow = random(1) > 0.8;
-    console.log('follow?', follow);
+    //console.log('follow?', follow);
     fill('red');
     noStroke();
     rect(mouseX, mouseY, 5, 5);
@@ -75,10 +76,21 @@ function draw() {
   
   // Update for next frame
   cd = _cd;
+
+  // Text labels
+  noStroke();
+  fill(0);
+  rect(cx, 0, width, 60);
+  fill(255);
+  textAlign(LEFT, TOP);
+  text("recent/older avg", 10, 0);
+  textAlign(RIGHT, TOP);
+  text("acc", width-10, 0);
+
 }
 
 
-
+// Calculate speed: recent average (10f) over older average (50f)
 function calc() {
   let d = dist(mouseX, mouseY, pmouseX, pmouseY);
 
