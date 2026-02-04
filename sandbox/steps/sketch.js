@@ -16,12 +16,12 @@ let paces = {
 let A, B;
 let sounds = {};
 
-let go = false;
+let go = true;
 
 // Generating all the possibilities
 let choreos = [];
 let results = [];
-const LIMIT = 6;
+const LIMIT = 3;
 generate([], 0);
 
 // All possible pairings of all possible choreographies
@@ -49,9 +49,11 @@ function generate(arr, idx) {
   generate(arr1, idx + 1);
 }
 
+console.log(choreos);
+
 function preload() {
-  sounds.a = loadSound('a.mp3');
-  sounds.b = loadSound('a.mp3');
+  sounds.a = loadSound('a.wav');
+  sounds.b = loadSound('b.wav');
 }
 
 function setup() {
@@ -67,12 +69,21 @@ function reset() {
   B = new Mover('B', 2 * height / 3, paces.m, sounds.b, choreo.B);
 }
 
+function replay(){
+  A.reset();
+  B.reset();
+}
+
 function draw() {
   background(0);
   if (go) {
     A.run();
     B.run();
   }
+
+  fill('white');
+  textSize(24);
+  text("Press [spacebar] to replay current pattern. [ENTER] to randomly select new pattern.", 100, 100);
 }
 
 class Mover {
@@ -83,29 +94,36 @@ class Mover {
     this.sound = sound;
     this.choreo = choreo;
 
+    this.w = STEP_W / 4;
+    this.h = height / 10;
+
+    this.reset();
+  }
+
+  reset() {
     this.go = true;
     this.c = 0;
     this.s = 0;
-    this.w = STEP_W / 4;
-    this.h = height / 10;
   }
 
   run() {
 
     if (this.go && frameCount % this.pace == 0) {
-      this.step();
+      let next = this.choreo[this.c];
+      if(next) this.step();
+
+      console.log(this.name, this.choreo[this.c] == 1 ? 'STEPS!' : 'waits.');
+      this.c++;
+
+      // Stop when we're done
+      if (this.c >= this.choreo.length) this.go = false;
     }
     this.display();
   }
 
   step() {
-    console.log(this.name, this.choreo[this.c] == 1 ? 'STEPS!' : 'waits.');
-
-    this.s += this.choreo[this.c];
+    this.s++;
     this.sound.play();
-
-    this.c++;
-    if (this.c >= this.choreo.length) this.go = false;
   }
 
   display() {
@@ -115,8 +133,6 @@ class Mover {
 }
 
 function keyPressed() {
-  if (keyCode == '32') go = !go;
-  console.log("GO", go);
-
-  reset();
+  if (keyCode == '32') replay();
+  else if(keyCode == RETURN) reset();
 }
