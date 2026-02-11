@@ -11,7 +11,8 @@ let follow = false;
 let loop = true;
 
 const TH = 1;
-const M = TH * 100;
+const MULT = 10;
+const M = TH * MULT;
 
 const FR = 30;
 const D_DUR = FR * 0.1; // 1/10th of a second
@@ -40,27 +41,25 @@ function draw() {
 
   // Recent change normalized by change over time
   let avgs = calc();
-  console.log(avgs);
   let avg_d = avgs.avg_d;
   let avg_c = avgs.avg_c;
 
   let _cd = avg_d > avg_c ? avg_d / avg_c : avg_c / avg_d;
   let cd = floor(_cd);
+  let fb = cd > TH ? 'red' : 'white';
   if (_cd) {
-    fill(cd > TH ? 'red' : 'white');
-    rect(0, y, _cd * 10, 1);
+    fill(fb);
+    rect(0, y, _cd * MULT, 1);
   }
 
   // Display speed
   let d = ds.slice(-1);
   rect(width - d, y, 10, 1);
-  stroke("red");
-  line(width - M, 0, width - M, height);
   noStroke();
 
-  // Erase change feedback
-  fill(0);
-  rect(cx, cy, sz);
+  // TH line
+  stroke("red");
+  line(M, 0, M, height);
 
   // Should we follow?
   let now = millis(); // Debounce 
@@ -80,17 +79,17 @@ function draw() {
   y++;
   y %= height;
 
-
-  if (follow) {
-    aspeed = avg_c;
-    //console.log(nfs(aspeed, 0, 2));    
-  }
-
+  // Update the speed of flashing
+  if (follow) aspeed = avg_d;
+  // Flash
   a += aspeed * adir;
   if (a < 0 || a > 255) adir *= -1;
 
-  fill(255, a);
   noStroke();
+  // Erase rect
+  fill(0);
+  rect(cx, cy, sz);
+  fill(255, a);
   rect(cx, cy, sz);
 
   // Text labels
