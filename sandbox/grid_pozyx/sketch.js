@@ -9,9 +9,7 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   w = width / COLS;
   h = height / ROWS;
-
   init_movers();
-
 }
 
 function draw() {
@@ -23,7 +21,6 @@ function draw() {
       let y = r * h;
       fill((c + r) % 2 == 0 ? 255 : 0);
       rect(x, y, w, h);
-
     }
   }
 
@@ -35,8 +32,7 @@ function draw() {
     fill('red');
     rect(cell.x, cell.y, w, h);
     push();
-    noFill();
-    stroke('white');
+    fill('green');
     ellipse(x, y, 5, 5);
     pop();
   }
