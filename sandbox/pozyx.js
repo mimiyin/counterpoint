@@ -6,7 +6,7 @@ const HEIGHT = 4320;
 
 
 // Auto-pilot
-let pozyx_on = false;
+let pozyx_on = true;
 
 // Sockets
 let socket = io();
@@ -17,11 +17,10 @@ socket.on('connect', function () {
 // pozyx
 let tags = {};
 
-const XMULT = 0.45;
-const YMULT = 0.7;
-const X_OFF = -2000;
-const Y_OFF = 500;
-const THETA = -Math.PI/5;
+const XMULT = .375;
+const YMULT = .375;
+const X_OFF = 1250;
+const Y_OFF = 0;
 
 
 // Listen for data coming from the server
@@ -30,13 +29,13 @@ function pozyx() {
     if(!pozyx_on) return;
     //return;
     // Log the data
-    //console.log('Received message: ', message);
+    //nsole.log('Received message: ', message);
     // Draw a circle at the y-position of the other user
     let tag = message[0];
-    let data = tag.data//;
+    let data = tag.data;
     let id = tag.tagId;
     let ts = tag.ts;
-
+    
     if (data) {
       if (data.coordinates) {
         let x = data.coordinates.x;
@@ -44,7 +43,7 @@ function pozyx() {
         if (id in tags) tags[id] = { x: x, y: y, ts: ts };
         //if (poxyz_on) {
           movers[id] = calc(x, y);
-          console.log("xy", id, movers[id].x, movers[id].y);
+          if(id == 10002043) console.log("xy", id, movers[id].x, movers[id].y);
         //}
       }
     }
@@ -53,16 +52,15 @@ function pozyx() {
 
 // Map poxyz to projection
 function calc(x, y) {
-  // Rotate
-  x = x*cos(THETA) - y*sin(THETA);
-  y = x*sin(THETA) + y*cos(THETA);
+  
+  // Translate
+  x += X_OFF;
+  y += Y_OFF;
+
   // Scale
   x*=XMULT;
   y*=YMULT;
-  // Translate
-  x += width/2 + X_OFF;
-  y += height/2 + Y_OFF;
-
+  
   return { x: x, y: y }
 }
 
@@ -76,6 +74,8 @@ function toggle_pozyx(key) {
 }
 
 function init_movers() {
+  if(pozyx_on) return;
+
   for(let m = 0; m < 10; m++) {
     movers[m] = { x : random(width), y : random(height) };
   }
