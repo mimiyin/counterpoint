@@ -9,7 +9,8 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   w = width / COLS;
   h = height / ROWS;
-  init_movers();
+  pozyx();
+  //init_movers();
 }
 
 function draw() {
@@ -33,7 +34,7 @@ function draw() {
     rect(cell.x, cell.y, w, h);
     push();
     fill('green');
-    ellipse(x, y, 5, 5);
+    ellipse(x, y, 50, 50);
     pop();
   }
   
