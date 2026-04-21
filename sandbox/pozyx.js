@@ -43,7 +43,6 @@ function pozyx() {
         if (id in tags) tags[id] = { x: x, y: y, ts: ts };
         //if (poxyz_on) {
           movers[id] = calc(x, y);
-          if(id == 10002043) console.log("xy", id, movers[id].x, movers[id].y);
         //}
       }
     }
