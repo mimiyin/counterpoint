@@ -4,9 +4,13 @@ console.log("POZYX code");
 const WIDTH = 3840;
 const HEIGHT = 4320;
 
+const DIAM = 50;
+const MOVE_TH = 5;
+const COUNT_TH = 60 * 5; 
+
 
 // Auto-pilot
-let pozyx_on = true;
+let pozyx_on = false;
 
 // Sockets
 let socket = io();
@@ -42,7 +46,9 @@ function pozyx() {
         let y = data.coordinates.y;
         if (id in tags) tags[id] = { x: x, y: y, ts: ts };
         //if (poxyz_on) {
-          movers[id] = calc(x, y);
+          let pos = calc(x, y);
+          if(id in movers) movers[id].update(pos.x, pos.y);
+          else movers[id] = new Mover(pos.x, pos.y);
         //}
       }
     }
@@ -76,7 +82,9 @@ function init_movers() {
   if(pozyx_on) return;
 
   for(let m = 0; m < 10; m++) {
-    movers[m] = { x : random(width), y : random(height) };
+    movers[m] = new Mover(random(width), random(height));    
   }
+
+  console.log(movers);
 }
 
