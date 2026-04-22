@@ -1,24 +1,25 @@
+const AVG_FRAMES = 1;
+
 class Mover {
     constructor(x, y) {
-        this.x = x;
-        this.y = y;
+        this.locs = [];
+        this.px = 0;
+        this.py = 0;
+        this.update(x,y);
         this.c = floor(random(-COUNT_TH, COUNT_TH));
     }
     count(move) {
         if(move > MOVE_TH) this.c = 0;
-        else if(this.c >= 0) this.c++;   
-        
-        
+        else if(this.c >= 0) this.c++;       
     }
 
     move() {
+        if(!mouseIsPressed) return;
         let d = dist(mouseX, mouseY, this.x, this.y);
-        if(d < DIAM/2) {
-            this.update(mouseX, mouseY);
-        }
+        if(d < DIAM/2) this.update(mouseX, mouseY);
     }
 
-    speak() {
+    still() {
         return this.c >= COUNT_TH;
     }
 
@@ -27,21 +28,35 @@ class Mover {
     }
 
     update(x, y) {
-        let d = dist(this.x, this.y, x, y);
+        this.locs.push({ x : x, y : y });
+        if(this.locs.length > AVG_FRAMES) this.locs.shift();
+        
+        let _x = 0;
+        let _y = 0;
+        
+        this.locs.forEach((loc)=>{
+            _x += loc.x;
+            _y += loc.y;
+        });
+        
+        _x /= this.locs.length;
+        _y /= this.locs.length;
+
+        this.px = this.x;
+        this.py = this.py;
+
+        this.x = _x;
+        this.y = _y;
+
+        let d = dist(this.x, this.y, this.px, this.py);
         this.count(d);
-        this.x = x;
-        this.y = y;
     }
 
     display() {
         fill('red');
         ellipse(this.x, this.y, DIAM);
         fill('white');
+        textAlign(CENTER, CENTER);
         text(floor(this.c), this.x, this.y);
     }
-
-
-
-
-
 }

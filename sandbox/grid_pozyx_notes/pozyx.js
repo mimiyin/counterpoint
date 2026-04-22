@@ -6,7 +6,7 @@ const HEIGHT = 4320;
 
 const DIAM = 50;
 const MOVE_TH = 5;
-const COUNT_TH = 10; //60 * 5; 
+const COUNT_TH = 60 * 5; 
 
 
 // Auto-pilot
@@ -78,10 +78,10 @@ function toggle_pozyx(key) {
   }
 }
 
-function init_movers() {
+function init_movers(num) {
   if(pozyx_on) return;
 
-  for(let m = 0; m < 10; m++) {
+  for(let m = 0; m < num; m++) {
     movers[m] = new Mover(random(width), random(height));    
   }
 
