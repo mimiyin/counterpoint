@@ -6,7 +6,7 @@ const HEIGHT = 4320;
 
 const DIAM = 50;
 const MOVE_TH = 5;
-const COUNT_TH = 60 * 5; 
+const COUNT_TH = 10; //60 * 5; 
 
 
 // Auto-pilot
