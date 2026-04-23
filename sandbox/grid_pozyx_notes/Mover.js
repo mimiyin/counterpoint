@@ -1,4 +1,6 @@
 const AVG_FRAMES = 120;
+let amp_max = 1;
+let amp_min = 0;
 
 function createOsc(f) {
     let osc = new p5.Oscillator();
@@ -6,7 +8,7 @@ function createOsc(f) {
     osc.freq(f);
     osc.start();
     osc.amp(0);
-    osc.amp(2, 10);
+    osc.amp(1, 10);
     return osc;
 }
 
@@ -21,25 +23,30 @@ class Mover {
 
     set(f) {
         //console.log(this.oscs);
+        // If the note hasn't changed
         if (this.f == f) {
+            //console.log('waver');
             this.waver();
             return;
         }
+        console.log('new');
         this.f = f;
         this.sound();
-        this.silence();
+        this.clear();
     }
 
     waver() {
         let osc = this.oscs.at(-1);
         let amp = osc.getAmp();
-        if(amp >= 2) {
-            console.log('waning');
-            osc.amp(-1, random(5, 10));
+        //console.log('amp', this.f, amp, amp_max, amp_min);
+        if(amp >= amp_max) {
+            console.log('wane');
+            osc.amp(amp_min, random(5, 10));
         }
-        else if(amp <= -1) {
-            console.log('waxing');
-            osc.amp(1, random(10, 20));
+        else if(amp <= amp_min) {
+            console.log('wax');
+            amp_min = random(-5, -1);
+            osc.amp(amp_max, random(2, 10));
         }
 
     }
@@ -48,7 +55,7 @@ class Mover {
         this.oscs.push(createOsc(this.f));
     }
 
-    silence() {
+    clear() {
         this.oscs.splice(0, this.oscs.length - 1).forEach((osc, o, oscs) => {
             osc.amp(0, 1);
             setTimeout(()=>{
@@ -59,9 +66,11 @@ class Mover {
     }
 
     move() {
+        if(!mouseIsPressed) return;
         let d = dist(mouseX, mouseY, this.x, this.y);
         if(d < DIAM/2) {
-            this.update(mouseX, mouseY);
+            this.x = mouseX;
+            this.y = mouseY;
         }
     }
 
