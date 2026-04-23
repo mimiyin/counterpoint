@@ -1,4 +1,4 @@
-const AVG_FRAMES = 1;
+const AVG_FRAMES = 120;
 
 class Mover {
     constructor(x, y) {
@@ -16,7 +16,14 @@ class Mover {
     move() {
         if(!mouseIsPressed) return;
         let d = dist(mouseX, mouseY, this.x, this.y);
-        if(d < DIAM/2) this.update(mouseX, mouseY);
+        if(d < DIAM/2) {
+            this.x = constrain(mouseX, 0, width);
+            this.y = constrain(mouseY, 0, height);
+            let d = dist(this.x, this.y, this.px, this.py);
+            this.count(d);
+            this.px = this.x;
+            this.py = this.y;
+        }
     }
 
     still() {
@@ -43,7 +50,7 @@ class Mover {
         _y /= this.locs.length;
 
         this.px = this.x;
-        this.py = this.py;
+        this.py = this.y;
 
         this.x = _x;
         this.y = _y;
