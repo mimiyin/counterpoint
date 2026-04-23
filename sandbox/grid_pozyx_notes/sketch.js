@@ -4,6 +4,7 @@ let notes = [];
 
 const RATIOS = [1, 1.125, 1.25, 1.25, 1.25, 1.34, 1.34, 1.5, 1.5, 1.5, 1.5, 1.5, 1.67, 1.67, 1.875, 2, 2, 2];
 const BASE = 300;
+const NUM_MOVERS = 2;
 
 let diag;
 
@@ -16,7 +17,7 @@ function setup() {
   pozyx();
 
   // Fake movers
-  if (!pozyx_on) init_movers(4);
+  if (!pozyx_on) init_movers(NUM_MOVERS);
 
   // Pair
   pair();
