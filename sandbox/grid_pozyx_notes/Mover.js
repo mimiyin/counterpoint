@@ -35,7 +35,6 @@ class Mover {
             this.waver();
             return;
         }
-        console.log('new');
         this.f = f;
         this.sound();
         this.clear();
@@ -75,7 +74,6 @@ class Mover {
     move() {
         if(!mouseIsPressed) return;
         let d = dist(mouseX, mouseY, this.x, this.y);
-        console.log('d', d);
         if(d < DIAM) {
             this.x = mouseX;
             this.y = mouseY;

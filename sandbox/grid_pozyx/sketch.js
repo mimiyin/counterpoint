@@ -10,12 +10,21 @@ function setup() {
   w = width / COLS;
   h = height / ROWS;
   pozyx();
-  //init_movers();
+  init_movers(10);
 }
 
 function draw() {
+
+  // Look for new tag data
+  let m = 0;
+  for(let id in tags) {
+    movers[m] = tags[id];
+    m++;
+  }
+
   background(255);
   noStroke();
+
   for (let c = 0; c < COLS; c++) {
     let x = c * w;
     for (let r = 0; r < ROWS; r++) {

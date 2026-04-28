@@ -39,12 +39,22 @@ function setup() {
   }
 
   // Create fake data
-  if (!pozyx_on) init_movers();
+  if (!pozyx_on) init_movers(10);
 }
 
 function draw() {
   background(0);
   noStroke();
+
+  // Look for new tag data
+  for(let id in tags) {
+    let pos = tags[id];
+    if(id in movers) movers[id].update(pos.x, pos.y)
+    else {
+      movers[id] = new Mover(id, pos.x, pos.y);
+    }
+  }
+
 
   // Draw cells
   // Reset them all to empty
