@@ -4,11 +4,6 @@ console.log("POZYX code");
 const WIDTH = 3840;
 const HEIGHT = 4320;
 
-const DIAM = 50;
-const MOVE_TH = 5;
-const COUNT_TH = 60 * 5; 
-
-
 // Auto-pilot
 let pozyx_on = false;
 
@@ -44,12 +39,7 @@ function pozyx() {
       if (data.coordinates) {
         let x = data.coordinates.x;
         let y = data.coordinates.y;
-        if (id in tags) tags[id] = { x: x, y: y, ts: ts };
-        //if (poxyz_on) {
-          let pos = calc(x, y);
-          if(id in movers) movers[id].update(pos.x, pos.y);
-          else movers[id] = new Mover(pos.x, pos.y);
-        //}
+        tags[id] = calc(x, y);
       }
     }
   });
@@ -81,10 +71,11 @@ function toggle_pozyx(key) {
 function init_movers(num) {
   if(pozyx_on) return;
 
-  for(let m = 0; m < num; m++) {
-    movers[m] = new Mover(random(width), random(height));    
-  }
+  // Get current ts
+  let ts = Date.now();
 
-  console.log(movers);
+  for(let n = 0; n < num; n++) {
+    tags[ts + '-' + n] = { x : mouseX, y : mouseY, ts : ts }
+  }
 }
 

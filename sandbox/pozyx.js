@@ -7,6 +7,7 @@ const HEIGHT = 4320;
 
 // Auto-pilot
 let pozyx_on = true;
+let pozyz_data;
 
 // Sockets
 let socket = io();
@@ -21,7 +22,6 @@ const XMULT = .375;
 const YMULT = .375;
 const X_OFF = 1250;
 const Y_OFF = 0;
-
 
 // Listen for data coming from the server
 function pozyx() {

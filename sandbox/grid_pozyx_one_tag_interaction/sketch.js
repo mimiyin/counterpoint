@@ -1,5 +1,5 @@
 const INPUT_MODE = 'KEYBOARD';
-const TRACKED_TAG_ID = 10002043;
+const TRACKED_TAG_ID = '10002042';
 
 const COLS = 10;
 const ROWS = 10;
