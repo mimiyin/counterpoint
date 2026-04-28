@@ -1,6 +1,11 @@
-const AVG_FRAMES = 120;
+const AVG_FRAMES = 1;
 let amp_max = 1;
 let amp_min = 0;
+
+const DIAM = 50;
+const MOVE_TH = 5;
+const COUNT_TH = 60 * 5; 
+
 
 function createOsc(f) {
     let osc = new p5.Oscillator();
@@ -14,7 +19,8 @@ function createOsc(f) {
 
 class Mover {
 
-    constructor(x, y) {
+    constructor(id, x, y) {
+        this.id = id;
         this.locs = [];
         this.update(x, y);
         this.f = 0;
@@ -55,6 +61,7 @@ class Mover {
         this.oscs.push(createOsc(this.f));
     }
 
+
     clear() {
         this.oscs.splice(0, this.oscs.length - 1).forEach((osc, o, oscs) => {
             osc.amp(0, 1);
@@ -68,9 +75,11 @@ class Mover {
     move() {
         if(!mouseIsPressed) return;
         let d = dist(mouseX, mouseY, this.x, this.y);
-        if(d < DIAM/2) {
+        console.log('d', d);
+        if(d < DIAM) {
             this.x = mouseX;
             this.y = mouseY;
+            tags[this.id] = { x : this.x, y : this.y, ts : Date.now() };
         }
     }
 
