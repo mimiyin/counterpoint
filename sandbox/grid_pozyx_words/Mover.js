@@ -1,7 +1,12 @@
 const AVG_FRAMES = 120;
+const DIAM = 50;
+const MOVE_TH = 5;
+const COUNT_TH = 10; //60 * 5; 
+
 
 class Mover {
-    constructor(x, y) {
+    constructor(id, x, y) {
+        this.id = id;
         this.locs = [];
         this.px = 0;
         this.py = 0;
@@ -23,6 +28,7 @@ class Mover {
             this.count(d);
             this.px = this.x;
             this.py = this.y;
+            tags[this.id] = { x : this.x, y : this.y, ts : Date.now() };
         }
     }
 

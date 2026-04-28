@@ -4,10 +4,8 @@ console.log("POZYX code");
 const WIDTH = 3840;
 const HEIGHT = 4320;
 
-
 // Auto-pilot
-let pozyx_on = true;
-let pozyz_data;
+let pozyx_on = false;
 
 // Sockets
 let socket = io();
@@ -23,10 +21,11 @@ const YMULT = .375;
 const X_OFF = 1250;
 const Y_OFF = 0;
 
+
 // Listen for data coming from the server
 function pozyx() {
   socket.on('pozyx', function (message) {
-    if(!pozyx_on) return;
+    if (!pozyx_on) return;
     //return;
     // Log the data
     //nsole.log('Received message: ', message);
@@ -35,15 +34,12 @@ function pozyx() {
     let data = tag.data;
     let id = tag.tagId;
     let ts = tag.ts;
-    
+
     if (data) {
       if (data.coordinates) {
         let x = data.coordinates.x;
         let y = data.coordinates.y;
-        if (id in tags) tags[id] = { x: x, y: y, ts: ts };
-        //if (poxyz_on) {
-          movers[id] = calc(x, y);
-        //}
+        tags[id] = calc(x, y);
       }
     }
   });
@@ -51,15 +47,15 @@ function pozyx() {
 
 // Map poxyz to projection
 function calc(x, y) {
-  
+
   // Translate
   x += X_OFF;
   y += Y_OFF;
 
   // Scale
-  x*=XMULT;
-  y*=YMULT;
-  
+  x *= XMULT;
+  y *= YMULT;
+
   return { x: x, y: y }
 }
 
@@ -72,11 +68,18 @@ function toggle_pozyx(key) {
   }
 }
 
-function init_movers() {
-  if(pozyx_on) return;
+function init_movers(count) {
+  if (pozyx_on) return;
 
-  for(let m = 0; m < 10; m++) {
-    movers[m] = { x : random(width), y : random(height) };
+  // Get current ts
+  let ts = Date.now();
+
+  for (let c = 0; c < count; c++) {
+    // Set x,y location of mover
+    let x = count > 1 ? random(width) : mouseX;
+    let y = count > 1 ? random(height) : mouseY;
+    
+    // Create tag obj
+    tags[ts + '-' + c] = { x: x, y: y, ts: ts }
   }
 }
-
