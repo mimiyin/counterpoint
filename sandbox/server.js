@@ -1,9 +1,8 @@
 // Saving data
 const fs = require('fs');
 const readFile = fs.promises.readFile;
-let save = true;
-let live = true;
-let idx = Date.now();
+let record = false;
+let live = false;
 let sd = 0;
 
 // Async function get saved data
@@ -63,14 +62,15 @@ client.on("message", (topic, message) => {
 
   try {
     let data = JSON.parse(message.toString());
-    //console.log(topic, data);
-    io.emit("pozyx", data);
+    //console.log(topic, data[0]);
+    if(live) io.emit("pozyx", data[0]);
+
 
     // Don't do anything if not saving
-    if (!save) return;
+    if (!record) return;
 
     // Use null and 2 as arguments for JSON.stringify to create human-readable formatted JSON
-    const jsonData = JSON.stringify(data, null, 2);
+    const jsonData = JSON.stringify(data[0], null, 2) + ',';
 
     fs.appendFile('data/pozyx.json', jsonData, 'utf8', (err) => {
       if (err) {
@@ -89,23 +89,35 @@ client.on("message", (topic, message) => {
 // Socket connections
 io.on('connection', function (socket) {
   console.log('Connected: ', socket.id);
-  
-  // Don't do anything if getting live data
-  if(live) return;
 
-  // Getting saved data
-  getJsonData('data/pozyx-' + idx + '.json')
-    .then((result) => {
-      console.log(result);
-      // Stream saved data
-      setInterval(() => {
-        io.emit("pozyx", savedData[sd]);
-        sd++;
-        sd % sd.length;
-      }, 1000)
+  socket.on('start', function () {
+    // Don't do anything if getting live data
+    if (live) return;
 
-    })
-    .catch(error => console.error(error));
+    // Getting recorded data
+    getJsonData('data/pozyx.json')
+      .then((record) => {
+        console.log("length", record.length);
+
+        // Stream recorded data
+        sendData(record, 0, record[0].timestamp);
+      })
+      .catch(error => console.error(error));
+
+  });
 
 });
 
+function sendData(record, r, pts) {
+  console.log('record', r, record.length);
+  let data = record[r];
+  let ts = data.timestamp;
+  let delay = ts - pts;
+  console.log('delay', delay);
+  setTimeout(() => {
+    io.emit("pozyx", data);
+    r++;
+    r %= record.length;
+    sendData(record, r, ts);
+  }, delay * 1000)
+}

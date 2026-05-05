@@ -64,7 +64,6 @@ function draw() {
     let pos = tags[id];
     if(id in movers) movers[id].update(pos.x, pos.y)
     else {
-      console.log(id);
       movers[id] = new Mover(id, pos.x, pos.y);
       moversToPair.push(movers[id]);
       pair();
