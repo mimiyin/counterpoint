@@ -22,6 +22,8 @@ function draw() {
     m++;
   }
 
+  console.log('M', m);
+
   background(255);
   noStroke();
 
@@ -45,8 +47,22 @@ function draw() {
     fill('green');
     ellipse(x, y, 50, 50);
     pop();
+    calc_accel(mover.a);
   }
   
+}
+
+function calc_accel(accels) {
+  let x = 0;
+  let w = width/accels.length;
+  for(let a = 1; a < accels.length; a++) {
+    let a0 = accels[a-1];
+    let a1 = accels[a];
+    let d = dist(a0[0], a0[1], a0[2], a1[0], a1[1], a1[2]);
+    fill(0, 255, 0, 100);
+    rect(x, 0, w, d*10);
+    x+=w;
+  }
 }
 
 function getCell(x, y) {
@@ -62,6 +78,9 @@ function keyPressed() {
     return;
   }
   switch (keyCode) {
+    case ENTER:
+      start();
+      break;
     case LEFT_ARROW:
       movers[m_idx].x -= w;
       break;

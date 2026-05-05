@@ -5,7 +5,7 @@ const WIDTH = 3840;
 const HEIGHT = 4320;
 
 // Auto-pilot
-let pozyx_on = false;
+let pozyx_on = true;
 
 // Sockets
 let socket = io();
@@ -19,7 +19,7 @@ let tags = {};
 const XMULT = .375;
 const YMULT = .375;
 const X_OFF = 1250;
-const Y_OFF = 0;
+const Y_OFF = -100;
 
 
 // Listen for data coming from the server
@@ -28,9 +28,9 @@ function pozyx() {
     if (!pozyx_on) return;
     //return;
     // Log the data
-    //nsole.log('Received message: ', message);
+    //console.log('Received message: ', message.data);
     // Draw a circle at the y-position of the other user
-    let tag = message[0];
+    let tag = message;
     let data = tag.data;
     let id = tag.tagId;
     let ts = tag.ts;
@@ -40,6 +40,7 @@ function pozyx() {
         let x = data.coordinates.x;
         let y = data.coordinates.y;
         tags[id] = calc(x, y);
+        tags[id].a = data.tagData.accelerometer;
       }
     }
   });
@@ -82,4 +83,16 @@ function init_movers(count) {
     // Create tag obj
     tags[ts + '-' + c] = { x: x, y: y, ts: ts }
   }
+}
+
+function start() {
+  socket.emit('start');
+}
+
+function record() {
+  socket.emit('record');
+}
+
+function live() {
+  socket.emit('live');
 }
