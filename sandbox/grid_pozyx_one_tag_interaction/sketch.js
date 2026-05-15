@@ -1,4 +1,4 @@
-const INPUT_MODE = 'KEYBOARD';
+let INPUT_MODE = 'KEYBOARD';
 const TRACKED_TAG_ID = '10002042';
 
 const COLS = 10;
@@ -280,7 +280,7 @@ function drawGrid() {
 function drawStatus() {
   push();
   fill(255, 235);
-  rect(12, 12, 500, 268);
+  rect(12, 12, 500, 308);
   fill(0);
   textSize(28);
   textAlign(LEFT, TOP);
@@ -312,8 +312,9 @@ function drawStatus() {
   text(TRACKED_TAG_ID, x + textWidth(l4), 160);
 
   textStyle(NORMAL);
-  text('Toggle Status (D)', x, 200);
-  text('Reset (R)', x, 240);
+  text('Toggle Input (I)', x, 200);
+  text('Toggle Status (D)', x, 240);
+  text('Reset (R)', x, 280);
 
   pop();
 }
@@ -329,6 +330,13 @@ function keyPressed() {
     currentProfileIndex = (currentProfileIndex + 1) % RESPONSE_PROFILES.length;
     applyProfile(computerMover, RESPONSE_PROFILES[currentProfileIndex]);
     console.log('Profile:', RESPONSE_PROFILES[currentProfileIndex].name);
+    return;
+  }
+
+  if (key === 'i' || key === 'I') {
+    INPUT_MODE = (INPUT_MODE === 'KEYBOARD') ? 'POZYX' : 'KEYBOARD';
+    if (INPUT_MODE === 'POZYX') setupInput();
+    console.log('Input mode:', INPUT_MODE);
     return;
   }
 
@@ -470,6 +478,7 @@ function getDirectionFromCells(fromCol, fromRow, toCol, toRow) {
 
 function setupInput() {
   if (INPUT_MODE !== 'POZYX') return;
+  if (socket) return;
   if (typeof io !== 'function') {
     console.warn('Socket.io client is unavailable.');
     return;
