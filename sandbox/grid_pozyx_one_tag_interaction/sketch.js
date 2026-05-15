@@ -18,6 +18,26 @@ const POZYX_PROJECTION = {
   yOffset: 0,
 };
 
+const RESPONSE_PROFILES = [
+  {
+    // Computer waits for human to finish, then responds after a delay.
+    name: 'turn-taking',
+    moveDuration: 350,
+    responseDelay: 500,
+    simultaneousMove: false,
+  },
+  {
+    // Computer starts moving at the same time as human, no delay.
+    name: 'simultaneous',
+    moveDuration: 350,
+    responseDelay: 0,
+    simultaneousMove: true,
+  },
+];
+
+let currentProfileIndex = 0;
+let showDebug = true;
+
 let w;
 let h;
 let socket;
@@ -38,12 +58,13 @@ const responseTypes = {
     return random(validMoves);
   },
 
-  // Copy the human's last direction. Falls back to random if that move isn't available.
+  // Copy the human's last direction. Silently rejects the move if that direction is blocked.
   mimic(computer, human, humanDir) {
     if (humanDir && canMove(computer, humanDir)) {
       return humanDir;
     }
-    return responseTypes.random(computer, human, humanDir);
+    console.log(`[mimic] cannot move: hitting a wall (direction: ${humanDir})`);
+    return null;
   },
 
   // Pick from valid moves that are NOT the mimic direction, so it always feels distinct.
@@ -59,7 +80,7 @@ const strategies = [
   {
     // The computer moves completely at random on every step, with no awareness
     // of what the human is doing. Acts as a baseline with no responsiveness.
-    name: 'always-random',
+    name: 'random',
     memoryWindow: 0,
     memory: [],
     decide(computer, human, humanDir) {
@@ -70,7 +91,7 @@ const strategies = [
     // The computer always attempts to mirror the human's last direction.
     // If that direction is blocked, it falls back to random. Acts as a baseline
     // with maximum responsiveness and no variation.
-    name: 'always-mimic',
+    name: 'mimic',
     memoryWindow: 0,
     memory: [],
     decide(computer, human, humanDir) {
@@ -114,32 +135,35 @@ const strategies = [
     }
   },
   {
-    // The computer alternates between mimic and not-mimic, but instead of
-    // switching at a fixed interval, the probability of flipping grows with
-    // each consecutive step in the same mode (the streak). A short streak is
-    // unlikely to flip; once the streak hits maxStreak, a flip is guaranteed.
-    // This produces variable-length runs with a natural sense of building pressure.
-    name: 'streak-flip',
-    // Current active mode: 'mimic' or 'not-mimic'. Flips between the two.
-    currentType: 'mimic',
-    // How many consecutive times the current type has been used.
+    // The computer accumulates a mimic streak. For the first gracePeriod steps
+    // flipping is impossible. After that, flip probability scales linearly from
+    // minFlipChance (at streak = gracePeriod+1) to 1.0 (at streak = maxStreak).
+    // A flip fires a single not-mimic step and resets the streak to 1.
+    name: 'streak',
+    // How many consecutive mimic steps have been taken since the last flip.
     streak: 1,
+    // Steps at the start of each mimic run during which flipping is impossible.
+    gracePeriod: 5,
     // When streak reaches this value, flip probability reaches 1.0 (guaranteed flip).
-    maxStreak: 10,
-    // Flip probability when streak = 1 (just flipped). Higher = more jittery.
+    maxStreak: 15,
+    // Flip probability at the first step after the grace period ends.
     minFlipChance: 0.1,
     decide(computer, human, humanDir) {
-      // Probability of flipping scales linearly from minFlipChance (streak=1) to 1.0 (streak=maxStreak).
-      let flipChance = map(this.streak, 1, this.maxStreak, this.minFlipChance, 1.0);
-
-      if (random() < flipChance) {
-        this.currentType = (this.currentType === 'mimic') ? 'not-mimic' : 'mimic';
-        this.streak = 1;
-      } else {
+      if (this.streak <= this.gracePeriod) {
         this.streak++;
+        return responseTypes.mimic(computer, human, humanDir);
       }
 
-      return responseTypes[this.currentType](computer, human, humanDir);
+      // Probability scales from minFlipChance (streak = gracePeriod+1) to 1.0 (streak = maxStreak).
+      let flipChance = map(this.streak, this.gracePeriod + 1, this.maxStreak, this.minFlipChance, 1.0);
+
+      if (random() < flipChance) {
+        this.streak = 1;
+        return responseTypes['not-mimic'](computer, human, humanDir);
+      } else {
+        this.streak++;
+        return responseTypes.mimic(computer, human, humanDir);
+      }
     }
   },
   {
@@ -191,13 +215,13 @@ function setup() {
   humanMover.moveDuration = 250;
 
   computerMover = new Mover(5, 6, color('#c92a2a'), 'ease', ['left', 'right', 'up', 'down']);
-  computerMover.moveDuration = 350;
-  computerMover.responseDelay = 500;
+  applyProfile(computerMover, RESPONSE_PROFILES[currentProfileIndex]);
 
   setupInput();
 
   console.log('Input mode:', INPUT_MODE);
   console.log('Strategy:', strategies[currentStrategyIndex].name);
+  console.log('Profile:', RESPONSE_PROFILES[currentProfileIndex].name);
 }
 
 function draw() {
@@ -225,9 +249,20 @@ function draw() {
     gameState = 'idle';
   }
 
+  if (gameState === 'simultaneous') {
+    let delayElapsed = millis() - computerDelayStart >= computerMover.responseDelay;
+    if (delayElapsed && pendingComputerDir) {
+      applyMove(computerMover, pendingComputerDir);
+      pendingComputerDir = null;
+    }
+    if (delayElapsed && !humanMover.isMoving() && !computerMover.isMoving()) {
+      gameState = 'idle';
+    }
+  }
+
   humanMover.display(w, h);
   computerMover.display(w, h);
-  drawStatus();
+  if (showDebug) drawStatus();
 }
 
 function drawGrid() {
@@ -245,13 +280,41 @@ function drawGrid() {
 function drawStatus() {
   push();
   fill(255, 235);
-  rect(12, 12, 250, 74);
+  rect(12, 12, 500, 268);
   fill(0);
-  textSize(14);
+  textSize(28);
   textAlign(LEFT, TOP);
-  text(`Mode: ${INPUT_MODE}`, 20, 20);
-  text(`Strategy: ${strategies[currentStrategyIndex].name}`, 20, 40);
-  text(`Tracked tag: ${TRACKED_TAG_ID}`, 20, 60);
+
+  let x = 40;
+
+  textStyle(NORMAL);
+  let l1 = 'Input: ';
+  text(l1, x, 40);
+  textStyle(BOLD);
+  text(INPUT_MODE, x + textWidth(l1), 40);
+
+  textStyle(NORMAL);
+  let l2 = 'Strategy (S): ';
+  text(l2, x, 80);
+  textStyle(BOLD);
+  text(strategies[currentStrategyIndex].name.toUpperCase(), x + textWidth(l2), 80);
+
+  textStyle(NORMAL);
+  let l3 = 'Profile (P): ';
+  text(l3, x, 120);
+  textStyle(BOLD);
+  text(RESPONSE_PROFILES[currentProfileIndex].name.toUpperCase(), x + textWidth(l3), 120);
+
+  textStyle(NORMAL);
+  let l4 = 'Tracked tag: ';
+  text(l4, x, 160);
+  textStyle(BOLD);
+  text(TRACKED_TAG_ID, x + textWidth(l4), 160);
+
+  textStyle(NORMAL);
+  text('Toggle Status (D)', x, 200);
+  text('Reset (R)', x, 240);
+
   pop();
 }
 
@@ -259,6 +322,23 @@ function keyPressed() {
   if (key === 's' || key === 'S') {
     currentStrategyIndex = (currentStrategyIndex + 1) % strategies.length;
     console.log('Strategy:', strategies[currentStrategyIndex].name);
+    return;
+  }
+
+  if (key === 'p' || key === 'P') {
+    currentProfileIndex = (currentProfileIndex + 1) % RESPONSE_PROFILES.length;
+    applyProfile(computerMover, RESPONSE_PROFILES[currentProfileIndex]);
+    console.log('Profile:', RESPONSE_PROFILES[currentProfileIndex].name);
+    return;
+  }
+
+  if (key === 'd' || key === 'D') {
+    showDebug = !showDebug;
+    return;
+  }
+
+  if (key === 'r' || key === 'R') {
+    resetComputer();
     return;
   }
 
@@ -329,10 +409,17 @@ function requestHumanMoveToCell(col, row) {
 }
 
 function beginHumanTurn() {
-  if (humanMover.isMoving()) {
-    gameState = 'human-moving';
+  if (computerMover.simultaneousMove) {
+    gameState = 'simultaneous';
+    computerDelayStart = millis();
+    let strategy = strategies[currentStrategyIndex];
+    pendingComputerDir = strategy.decide(computerMover, humanMover, lastHumanDir);
   } else {
-    beginComputerDelay();
+    if (humanMover.isMoving()) {
+      gameState = 'human-moving';
+    } else {
+      beginComputerDelay();
+    }
   }
 }
 
@@ -341,6 +428,32 @@ function beginComputerDelay() {
   computerDelayStart = millis();
   let strategy = strategies[currentStrategyIndex];
   pendingComputerDir = strategy.decide(computerMover, humanMover, lastHumanDir);
+}
+
+function resetComputer() {
+  let adjacent = Object.values(DIRECTIONS)
+    .map(d => ({ col: humanMover.col + d.dc, row: humanMover.row + d.dr }))
+    .filter(cell => isCellInBounds(cell.col, cell.row));
+
+  if (adjacent.length === 0) return;
+
+  let target = random(adjacent);
+  gameState = 'idle';
+  pendingComputerDir = null;
+  computerMover.col = target.col;
+  computerMover.row = target.row;
+  computerMover._fromCol = target.col;
+  computerMover._fromRow = target.row;
+  computerMover._toCol = target.col;
+  computerMover._toRow = target.row;
+  computerMover._moving = false;
+  console.log(`[reset] computer → (${target.col}, ${target.row})`);
+}
+
+function applyProfile(mover, profile) {
+  mover.moveDuration = profile.moveDuration;
+  mover.responseDelay = profile.responseDelay;
+  mover.simultaneousMove = profile.simultaneousMove;
 }
 
 function getDirectionFromCells(fromCol, fromRow, toCol, toRow) {
