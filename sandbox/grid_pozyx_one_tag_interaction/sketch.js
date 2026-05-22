@@ -5,10 +5,14 @@ const COLS = 10;
 const ROWS = 10;
 
 const DIRECTIONS = {
-  left: { dc: -1, dr: 0 },
-  right: { dc: 1, dr: 0 },
-  up: { dc: 0, dr: -1 },
-  down: { dc: 0, dr: 1 },
+  left:       { dc: -1, dr:  0 },
+  right:      { dc:  1, dr:  0 },
+  up:         { dc:  0, dr: -1 },
+  down:       { dc:  0, dr:  1 },
+  'up-left':  { dc: -1, dr: -1 },
+  'up-right': { dc:  1, dr: -1 },
+  'down-left':  { dc: -1, dr:  1 },
+  'down-right': { dc:  1, dr:  1 },
 };
 
 const POZYX_PROJECTION = {
@@ -211,10 +215,10 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   updateCellSize();
 
-  humanMover = new Mover(5, 5, color('#2f9e44'), 'ease', ['left', 'right', 'up', 'down']);
+  humanMover = new Mover(5, 5, color('#2f9e44'), 'ease', ['left', 'right', 'up', 'down', 'up-left', 'up-right', 'down-left', 'down-right']);
   humanMover.moveDuration = 250;
 
-  computerMover = new Mover(5, 6, color('#c92a2a'), 'ease', ['left', 'right', 'up', 'down']);
+  computerMover = new Mover(5, 6, color('#c92a2a'), 'ease', ['left', 'right', 'up', 'down', 'up-left', 'up-right', 'down-left', 'down-right']);
   applyProfile(computerMover, RESPONSE_PROFILES[currentProfileIndex]);
 
   setupInput();
@@ -355,10 +359,14 @@ function keyPressed() {
 
   let dirKey = null;
 
-  if (keyCode === LEFT_ARROW) dirKey = 'left';
-  if (keyCode === RIGHT_ARROW) dirKey = 'right';
-  if (keyCode === UP_ARROW) dirKey = 'up';
-  if (keyCode === DOWN_ARROW) dirKey = 'down';
+  if (keyCode === 103) dirKey = 'up-left';
+  if (keyCode === 104) dirKey = 'up';
+  if (keyCode === 105) dirKey = 'up-right';
+  if (keyCode === 100) dirKey = 'left';
+  if (keyCode === 102) dirKey = 'right';
+  if (keyCode === 97)  dirKey = 'down-left';
+  if (keyCode === 98)  dirKey = 'down';
+  if (keyCode === 99)  dirKey = 'down-right';
 
   if (!dirKey) return;
   requestHumanMove(dirKey);
@@ -468,11 +476,15 @@ function getDirectionFromCells(fromCol, fromRow, toCol, toRow) {
   let dc = toCol - fromCol;
   let dr = toRow - fromRow;
 
-  if (abs(dc) + abs(dr) !== 1) return null;
-  if (dc === -1) return 'left';
-  if (dc === 1) return 'right';
-  if (dr === -1) return 'up';
-  if (dr === 1) return 'down';
+  if (abs(dc) > 1 || abs(dr) > 1 || (dc === 0 && dr === 0)) return null;
+  if (dc === -1 && dr ===  0) return 'left';
+  if (dc ===  1 && dr ===  0) return 'right';
+  if (dc ===  0 && dr === -1) return 'up';
+  if (dc ===  0 && dr ===  1) return 'down';
+  if (dc === -1 && dr === -1) return 'up-left';
+  if (dc ===  1 && dr === -1) return 'up-right';
+  if (dc === -1 && dr ===  1) return 'down-left';
+  if (dc ===  1 && dr ===  1) return 'down-right';
   return null;
 }
 
