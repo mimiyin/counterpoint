@@ -1,4 +1,4 @@
-const AVG_FRAMES = 120;
+const AVG_FRAMES = 1;
 const DIAM = 50;
 const MOVE_TH = 5;
 const COUNT_TH = 10; //60 * 5; 
@@ -15,7 +15,9 @@ class Mover {
     }
     count(move) {
         if(move > MOVE_TH) this.c = 0;
-        else if(this.c >= 0) this.c++;       
+        else if(this.c >= 0) {
+            this.c++;   
+        }
     }
 
     move() {
@@ -70,6 +72,6 @@ class Mover {
         ellipse(this.x, this.y, DIAM);
         fill('white');
         textAlign(CENTER, CENTER);
-        text(floor(this.c), this.x, this.y);
+        text(this.c, this.x, this.y);
     }
 }

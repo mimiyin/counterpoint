@@ -1,7 +1,7 @@
 let INPUT_MODE = 'KEYBOARD';
 const TRACKED_TAG_ID = '10002042';
 
-const COLS = 10;
+const COLS = 7;
 const ROWS = 10;
 
 const DIRECTIONS = {

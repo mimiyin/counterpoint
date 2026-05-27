@@ -1,21 +1,7 @@
-const AVG_FRAMES = 1;
-let amp_max = 1;
-let amp_min = 0;
-
-const DIAM = 50;
+const AVG_FRAMES = 10;
+const DIAM = 100;
 const MOVE_TH = 5;
 const COUNT_TH = 60 * 5; 
-
-
-function createOsc(f) {
-    let osc = new p5.Oscillator();
-    osc.setType('sine');
-    osc.freq(f);
-    osc.start();
-    osc.amp(0);
-    osc.amp(1, 10);
-    return osc;
-}
 
 class Mover {
 
@@ -24,51 +10,10 @@ class Mover {
         this.locs = [];
         this.update(x, y);
         this.f = 0;
-        this.oscs = [];
     }
 
     set(f) {
-        //console.log(this.oscs);
-        // If the note hasn't changed
-        if (this.f == f) {
-            //console.log('waver');
-            this.waver();
-            return;
-        }
         this.f = f;
-        this.sound();
-        this.clear();
-    }
-
-    waver() {
-        let osc = this.oscs.at(-1);
-        let amp = osc.getAmp();
-        //console.log('amp', this.f, amp, amp_max, amp_min);
-        if(amp >= amp_max) {
-            console.log('wane');
-            osc.amp(amp_min, random(5, 10));
-        }
-        else if(amp <= amp_min) {
-            console.log('wax');
-            amp_min = random(-5, -1);
-            osc.amp(amp_max, random(2, 10));
-        }
-
-    }
-
-    sound() {
-        this.oscs.push(createOsc(this.f));
-    }
-
-
-    clear() {
-        this.oscs.splice(0, this.oscs.length - 1).forEach((osc, o, oscs) => {
-            osc.amp(0, 1);
-            setTimeout(()=>{
-                osc.stop();
-                oscs.splice(o);
-            }, 1000);
-        });
     }
 
     move() {
@@ -105,6 +50,7 @@ class Mover {
         ellipse(this.x, this.y, DIAM);
         fill('white');
         textAlign(CENTER, CENTER);
+        textSize(48);
         text(floor(nfs(this.f, 0, 2)), this.x, this.y);
     }
 }
