@@ -16,8 +16,10 @@ class Cell {
 
     speak(word) {
         // speak
-        if(!this.ready) return;
-        this.voice.speak(word);
+        if(!this.ready || this.isEmpty) return;
+        //this.voice.speak(word);
+        console.log("speak: ", word);
+        word_files[word].play();
         this.cue(false);
     }
 

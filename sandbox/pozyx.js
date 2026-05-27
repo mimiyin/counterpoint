@@ -5,7 +5,7 @@ const WIDTH = 3840;
 const HEIGHT = 4320;
 
 // Auto-pilot
-let pozyx_on = true;
+let pozyx_on = false;
 
 // Sockets
 let socket = io();

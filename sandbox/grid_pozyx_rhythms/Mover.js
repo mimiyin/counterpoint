@@ -1,7 +1,22 @@
 const AVG_FRAMES = 10;
+const AMP_MAX = 1;
+const AMP_MIN = 0.1;
+
 const DIAM = 100;
 const MOVE_TH = 5;
 const COUNT_TH = 60 * 5; 
+const FADEIN_DUR = 5;
+
+
+function createOsc(f) {
+    let osc = new p5.Oscillator();
+    osc.setType('sine');
+    osc.freq(f);
+    osc.start();
+    osc.amp(0);
+    osc.amp(AMP_MAX, FADEIN_DUR);
+    return osc;
+}
 
 class Mover {
 
@@ -9,11 +24,11 @@ class Mover {
         this.id = id;
         this.locs = [];
         this.update(x, y);
-        this.f = 0;
     }
 
-    set(f) {
-        this.f = f;
+    run() {
+        this.move();
+        this.display();
     }
 
     move() {
@@ -48,9 +63,5 @@ class Mover {
     display() {
         fill('red');
         ellipse(this.x, this.y, DIAM);
-        fill('white');
-        textAlign(CENTER, CENTER);
-        textSize(48);
-        text(floor(nfs(this.f, 0, 2)), this.x, this.y);
     }
 }
