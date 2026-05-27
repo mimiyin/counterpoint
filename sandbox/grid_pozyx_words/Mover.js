@@ -22,8 +22,8 @@ class Mover {
 
     move() {
         if(!mouseIsPressed) return;
-        let d = dist(mouseX, mouseY, this.x, this.y);
-        if(d < DIAM/2) {
+        //let d = dist(mouseX, mouseY, this.x, this.y);
+        //if(d < DIAM/2) {
             this.x = constrain(mouseX, 0, width);
             this.y = constrain(mouseY, 0, height);
             let d = dist(this.x, this.y, this.px, this.py);
@@ -31,7 +31,7 @@ class Mover {
             this.px = this.x;
             this.py = this.y;
             tags[this.id] = { x : this.x, y : this.y, ts : Date.now() };
-        }
+        //}
     }
 
     still() {

@@ -10,4 +10,4 @@ let distances = [
     'far': ['no', "don't", 'stop']
     },
 ]
-let words = ['me', 'you', 'us', 'here', 'now', 'then', 'there']; //] 'why', 'because'];
+let words = ['me', 'you', 'us', 'here', 'now', 'where', 'then', 'there', 'when']; //] 'why', 'because'];
