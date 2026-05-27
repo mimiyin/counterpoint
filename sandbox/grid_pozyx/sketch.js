@@ -1,6 +1,6 @@
 let movers = {}
 
-const COLS = 10;
+const COLS = 7;
 const ROWS = 10;
 let w, h;
 let m_idx = 0;
