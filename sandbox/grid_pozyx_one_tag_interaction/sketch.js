@@ -228,6 +228,20 @@ const strategies = [
     }
   },
   {
+    // The computer mirrors the human's last distance move: if the human moved
+    // closer to the computer, the computer moves closer to the human; if the
+    // human moved further away, the computer also moves further away.
+    // Falls back to random if no human move has been recorded yet.
+    name: 'mimic-distance',
+    memoryWindow: 0,
+    memory: [],
+    decide(computer, human, humanDir) {
+      let lastHumanType = humanDistanceHistory[humanDistanceHistory.length - 1];
+      if (!lastHumanType) return responseTypes.random(computer, human, humanDir);
+      return responseTypes[lastHumanType](computer, human);
+    }
+  },
+  {
     // The computer accumulates a mimic streak. For the first gracePeriod steps
     // flipping is impossible. After that, flip probability scales linearly from
     // minFlipChance (at streak = gracePeriod+1) to 1.0 (at streak = maxStreak).
@@ -299,9 +313,41 @@ const strategies = [
       return responseTypes[typeToUse](computer, human, humanDir);
     }
   },
+  {
+    // Like streak, but the default move mirrors the human's last distance move
+    // (mimic-distance: human closer → computer closer, human further → computer further).
+    // The streak counts consecutive mimic-distance moves. After the grace period,
+    // flip probability rises until a single counter move fires (opposite of human's
+    // last distance move) and resets the streak.
+    name: 'streak-distance',
+    streak: 1,
+    gracePeriod: 5,
+    maxStreak: 15,
+    minFlipChance: 0.1,
+    decide(computer, human, humanDir) {
+      let lastHumanType = humanDistanceHistory[humanDistanceHistory.length - 1];
+      let mimicType = lastHumanType || 'closer';
+      let flipType = (mimicType === 'closer') ? 'further' : 'closer';
+
+      if (this.streak <= this.gracePeriod) {
+        this.streak++;
+        return responseTypes[mimicType](computer, human);
+      }
+
+      let flipChance = map(this.streak, this.gracePeriod + 1, this.maxStreak, this.minFlipChance, 1.0);
+
+      if (random() < flipChance) {
+        this.streak = 1;
+        return responseTypes[flipType](computer, human);
+      } else {
+        this.streak++;
+        return responseTypes[mimicType](computer, human);
+      }
+    }
+  },
 ];
 
-const STRATEGY_PROGRAM = ['mimic', 'streak', 'elastic-mimic', 'elastic-distance', 'elastic-distance-human', 'random'];
+const STRATEGY_PROGRAM = ['mimic', 'mimic-distance', 'streak', 'streak-distance', 'elastic-mimic', 'elastic-distance', 'elastic-distance-human', 'random'];
 let currentProgramStep = 0;
 
 function setup() {
