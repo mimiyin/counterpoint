@@ -163,7 +163,10 @@ const strategies = [
 
       if (random() < flipChance) {
         this.streak = 1;
-        return responseTypes['not-mimic'](computer, human, humanDir);
+        const CARDINALS = ['left', 'right', 'up', 'down'];
+        let mimicDir = (humanDir && canMove(computer, humanDir)) ? humanDir : null;
+        let validCardinals = CARDINALS.filter(d => canMove(computer, d) && d !== mimicDir);
+        return validCardinals.length > 0 ? random(validCardinals) : responseTypes['not-mimic'](computer, human, humanDir);
       } else {
         this.streak++;
         return responseTypes.mimic(computer, human, humanDir);
@@ -209,7 +212,8 @@ const strategies = [
   },
 ];
 
-let currentStrategyIndex = 0;
+const STRATEGY_PROGRAM = ['mimic', 'streak', 'elastic-mimic', 'random'];
+let currentProgramStep = 0;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -224,7 +228,7 @@ function setup() {
   setupInput();
 
   console.log('Input mode:', INPUT_MODE);
-  console.log('Strategy:', strategies[currentStrategyIndex].name);
+  console.log('Strategy:', STRATEGY_PROGRAM[currentProgramStep]);
   console.log('Profile:', RESPONSE_PROFILES[currentProfileIndex].name);
 }
 
@@ -301,7 +305,7 @@ function drawStatus() {
   let l2 = 'Strategy (S): ';
   text(l2, x, 80);
   textStyle(BOLD);
-  text(strategies[currentStrategyIndex].name.toUpperCase(), x + textWidth(l2), 80);
+  text(STRATEGY_PROGRAM[currentProgramStep].toUpperCase(), x + textWidth(l2), 80);
 
   textStyle(NORMAL);
   let l3 = 'Profile (P): ';
@@ -325,8 +329,8 @@ function drawStatus() {
 
 function keyPressed() {
   if (key === 's' || key === 'S') {
-    currentStrategyIndex = (currentStrategyIndex + 1) % strategies.length;
-    console.log('Strategy:', strategies[currentStrategyIndex].name);
+    currentProgramStep = (currentProgramStep + 1) % STRATEGY_PROGRAM.length;
+    console.log('Strategy:', STRATEGY_PROGRAM[currentProgramStep]);
     return;
   }
 
@@ -428,7 +432,7 @@ function beginHumanTurn() {
   if (computerMover.simultaneousMove) {
     gameState = 'simultaneous';
     computerDelayStart = millis();
-    let strategy = strategies[currentStrategyIndex];
+    let strategy = strategies.find(s => s.name === STRATEGY_PROGRAM[currentProgramStep]);
     pendingComputerDir = strategy.decide(computerMover, humanMover, lastHumanDir);
   } else {
     if (humanMover.isMoving()) {
@@ -442,7 +446,7 @@ function beginHumanTurn() {
 function beginComputerDelay() {
   gameState = 'computer-delay';
   computerDelayStart = millis();
-  let strategy = strategies[currentStrategyIndex];
+  let strategy = strategies.find(s => s.name === STRATEGY_PROGRAM[currentProgramStep]);
   pendingComputerDir = strategy.decide(computerMover, humanMover, lastHumanDir);
 }
 
