@@ -78,6 +78,32 @@ const responseTypes = {
     let validMoves = computer.movementOptions.filter(d => canMove(computer, d) && d !== mimicDir);
     return validMoves.length > 0 ? random(validMoves) : responseTypes.random(computer, human, humanDir);
   },
+
+  // Pick from valid moves that bring the computer closer to the human.
+  // Falls back to any valid move if no strictly closer move exists.
+  closer(computer, human) {
+    let currentDist = dist(computer.col, computer.row, human.col, human.row);
+    let validMoves = computer.movementOptions.filter(dirKey => {
+      if (!canMove(computer, dirKey)) return false;
+      let d = DIRECTIONS[dirKey];
+      return dist(computer.col + d.dc, computer.row + d.dr, human.col, human.row) < currentDist;
+    });
+    if (validMoves.length === 0) validMoves = computer.movementOptions.filter(d => canMove(computer, d));
+    return validMoves.length > 0 ? random(validMoves) : null;
+  },
+
+  // Pick from valid moves that take the computer further from the human.
+  // Falls back to any valid move if no strictly further move exists.
+  further(computer, human) {
+    let currentDist = dist(computer.col, computer.row, human.col, human.row);
+    let validMoves = computer.movementOptions.filter(dirKey => {
+      if (!canMove(computer, dirKey)) return false;
+      let d = DIRECTIONS[dirKey];
+      return dist(computer.col + d.dc, computer.row + d.dr, human.col, human.row) > currentDist;
+    });
+    if (validMoves.length === 0) validMoves = computer.movementOptions.filter(d => canMove(computer, d));
+    return validMoves.length > 0 ? random(validMoves) : null;
+  },
 };
 
 const strategies = [
@@ -136,6 +162,40 @@ const strategies = [
       }
 
       return responseTypes[chosenType](computer, human, humanDir);
+    }
+  },
+  {
+    // Like elastic-mimic, but the two tracked types are 'closer' and 'further':
+    // whether each move decreased or increased the distance to the human.
+    // As the closer ratio rises above closerThreshold, the probability of
+    // choosing a further move increases elastically — and vice versa.
+    name: 'elastic-distance',
+    memoryWindow: 10,
+    memory: new Array(10).fill('closer'),
+    // The closer ratio above which further chance starts to kick in.
+    closerThreshold: 0.7,
+    // The minimum probability of choosing further when closerRatio equals closerThreshold.
+    furtherChanceMin: 0.5,
+    // The maximum probability of choosing further when closerRatio reaches 1.0.
+    furtherChanceMax: 0.9,
+    decide(computer, human, humanDir) {
+      let closerCount = this.memory.filter(t => t === 'closer').length;
+      let closerRatio = closerCount / this.memoryWindow;
+      let chosenType = 'closer';
+
+      if (closerRatio > this.closerThreshold) {
+        let furtherChance = map(closerRatio, this.closerThreshold, 1.0, this.furtherChanceMin, this.furtherChanceMax);
+        if (random() < furtherChance) {
+          chosenType = 'further';
+        }
+      }
+
+      this.memory.push(chosenType);
+      if (this.memory.length > this.memoryWindow) {
+        this.memory.shift();
+      }
+
+      return responseTypes[chosenType](computer, human);
     }
   },
   {
@@ -212,7 +272,7 @@ const strategies = [
   },
 ];
 
-const STRATEGY_PROGRAM = ['mimic', 'streak', 'elastic-mimic', 'random'];
+const STRATEGY_PROGRAM = ['mimic', 'streak', 'elastic-mimic', 'elastic-distance', 'random'];
 let currentProgramStep = 0;
 
 function setup() {
