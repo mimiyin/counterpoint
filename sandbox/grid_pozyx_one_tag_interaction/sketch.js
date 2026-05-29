@@ -54,6 +54,8 @@ let gameState = 'idle';
 let pendingComputerDir = null;
 let computerDelayStart = 0;
 
+const humanDistanceHistory = [];
+
 const responseTypes = {
   // Pick freely from all valid moves.
   random(computer) {
@@ -199,6 +201,33 @@ const strategies = [
     }
   },
   {
+    // Like elastic-distance, but the memory window tracks the HUMAN mover's
+    // moves (closer/further relative to the computer) rather than the computer's
+    // own past moves. The computer reads the human's recent approach/retreat
+    // ratio and applies the same elastic logic to choose its own next move.
+    name: 'elastic-distance-human',
+    memoryWindow: 10,
+    closerThreshold: 0.4, //good range：0.2–0.4 (lower = more likely to choose further)
+    furtherChanceMin: 0.6,
+    furtherChanceMax: 0.9,
+    decide(computer, human, humanDir) {
+      let window = humanDistanceHistory.slice(-this.memoryWindow);
+      let effectiveWindow = window.length || 1;
+      let closerCount = window.filter(t => t === 'closer').length;
+      let closerRatio = closerCount / effectiveWindow;
+      let chosenType = 'closer';
+
+      if (closerRatio > this.closerThreshold) {
+        let furtherChance = map(closerRatio, this.closerThreshold, 1.0, this.furtherChanceMin, this.furtherChanceMax);
+        if (random() < furtherChance) {
+          chosenType = 'further';
+        }
+      }
+
+      return responseTypes[chosenType](computer, human);
+    }
+  },
+  {
     // The computer accumulates a mimic streak. For the first gracePeriod steps
     // flipping is impossible. After that, flip probability scales linearly from
     // minFlipChance (at streak = gracePeriod+1) to 1.0 (at streak = maxStreak).
@@ -272,7 +301,7 @@ const strategies = [
   },
 ];
 
-const STRATEGY_PROGRAM = ['mimic', 'streak', 'elastic-mimic', 'elastic-distance', 'random'];
+const STRATEGY_PROGRAM = ['mimic', 'streak', 'elastic-mimic', 'elastic-distance', 'elastic-distance-human', 'random'];
 let currentProgramStep = 0;
 
 function setup() {
@@ -467,9 +496,17 @@ function applyMove(mover, dirKey) {
   return true;
 }
 
+function recordHumanDistanceMove(toCol, toRow) {
+  let currentDist = dist(humanMover.col, humanMover.row, computerMover.col, computerMover.row);
+  let newDist = dist(toCol, toRow, computerMover.col, computerMover.row);
+  humanDistanceHistory.push(newDist < currentDist ? 'closer' : 'further');
+}
+
 function requestHumanMove(dirKey) {
   if (!canMove(humanMover, dirKey)) return false;
 
+  let d = DIRECTIONS[dirKey];
+  recordHumanDistanceMove(humanMover.col + d.dc, humanMover.row + d.dr);
   applyMove(humanMover, dirKey);
   lastHumanDir = dirKey;
   beginHumanTurn();
@@ -481,6 +518,7 @@ function requestHumanMoveToCell(col, row) {
   if (!isCellInBounds(col, row)) return false;
   if (humanMover.col === col && humanMover.row === row) return false;
 
+  recordHumanDistanceMove(col, row);
   let dirKey = getDirectionFromCells(humanMover.col, humanMover.row, col, row);
   humanMover.moveTo(col, row);
   lastHumanDir = dirKey;
