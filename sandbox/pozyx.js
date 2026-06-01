@@ -15,11 +15,14 @@ socket.on('connect', function () {
 
 // pozyx
 let tags = {};
-
+// Mapping mm to pixels
 const XMULT = .375;
 const YMULT = .375;
 const X_OFF = 1250;
 const Y_OFF = -100;
+
+// Distance to Acceleration TH for filtering noisy pos data
+const D2A_TH = 2;
 
 
 // Listen for data coming from the server
@@ -39,15 +42,53 @@ function pozyx() {
       if (data.coordinates) {
         let x = data.coordinates.x;
         let y = data.coordinates.y;
-        tags[id] = calc(x, y);
-        tags[id].a = data.tagData.accelerometer;
+        
+        // Get latest data
+        let pos = calc_pos(x, y);
+        let accs = calc_acc(data.tagData.accelerometer);
+
+        // Load previous data or create new
+        let data = tags[id] || { x : pos.x, y : posy }
+
+        // Update data
+        data.px = data.x;
+        data.px = data.y;
+        data.x = pos.x;
+        data.y = pos.y;
+        data.accs = accs;
+
+        // Calc distance travelled
+        let d = dist(data.px, data.py, data.x, data.y);
+        // Calc ratio of distance to acceleration data
+        let d2a = d / calc_acc(accs);
+        // If there was too much movement, discard the data
+        if(d2a > D2A_TH) {
+          // Only update acceleration data
+          tags[id].accs = accs;
+          return;
+        }
+
+        // Otherwise, update it
+        tags[id] = data;
       }
     }
   });
 }
 
+function calc_acc(accs) {
+  const XY = 2;
+  let sum = 0;
+  for(let acc of accs) {
+    for(a = 0; a < XY; a++) {
+      let xy = acc[a];
+      sum += abs(xy);
+    }
+  }
+  return sum / (accs.length * XY);
+}
+
 // Map poxyz to projection
-function calc(x, y) {
+function calc_pos(x, y) {
 
   // Translate
   x += X_OFF;
