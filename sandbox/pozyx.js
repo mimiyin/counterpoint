@@ -53,12 +53,14 @@ function pozyx() {
         tag.py = exists ? tags[id].y : pos.y;
         tag.x = pos.x;
         tag.y = pos.y;
+
+        // Package up accelerometer data
         let pkg = {};
         pkg.accs = accs;
-        pkg.cum_accs = exists ? tags[id].acc.cum_accs : [];
-        pkg.cum_accs.push(...pkg.accs);
-        pkg.avg_acc = avg_acc(pkg.cum_accs);
-        pkg.dev_acc = dev_acc(pkg.avg_acc, pkg.cum_accs);
+        pkg.hist = exists ? tags[id].acc.hist : [];
+        pkg.hist= build_hist(pkg.hist, pkg.accs);
+        pkg.avg = avg_acc(pkg.hist);
+        pkg.dev = dev_acc(pkg.avg, pkg.hist);
 
         // Calc distance travelled
         pkg.d = dist(tag.px, tag.py, tag.x, tag.y);
@@ -74,9 +76,9 @@ function pozyx() {
 
         // Reject new positions
         if(pkg.msg == "\u{1F92A}") {
-          tags[id].pkg = pkg;
+          //tags[id].pkg = pkg;
           console.log("REJECTED", pkg.d, pkg.sum);
-          return;
+          //return;
         }
         // Otherwise, update it
         else tags[id] = tag;          
@@ -85,31 +87,34 @@ function pozyx() {
   });
 }
 
-function dev_acc(avg, cum) {
-  let dev = [0, 0, 0];
-  for(let acc of cum) {
-    for(let xyz in acc) {
-      dev[xyz] += abs(acc[xyz] - avg[xyz]);
-    }
-  }
-  return dev;
+function build_hist(hist, accs){
+  hist.push(...accs);
+  let overage = hist.length - 50;
+  if(overage > 0) hist.splice(0, overage);
+  return hist;
 }
 
-
-function avg_acc(cum) {
+function avg_acc(hist) {
   let avg = [0, 0, 0];
-  for(let acc of all) {
+  for(let acc of hist) {
     for(let a in acc) {
       avg[a] += acc[a];
     }
   }
   for(let a in avg) {
-    avg[a] /= all.length;
-    noStroke();
-    fill('purple');
-    rect(a * w, 0, w/2, avg[a]);
+    avg[a] /= hist.length;
   }
   return avg;
+}
+
+function dev_acc(avg, hist) {
+  let dev = [0, 0, 0];
+  for(let acc of hist) {
+    for(let xyz in acc) {
+      dev[xyz] += abs(acc[xyz] - avg[xyz]);
+    }
+  }
+  return dev;
 }
 
 function sum_acc(accs) {
@@ -120,7 +125,7 @@ function sum_acc(accs) {
       sum += abs(xyz);
     }
   }
-  return sum;
+  return sum / (XYZ * accs.length);
 }
 
 // Map poxyz to projection
