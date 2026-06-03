@@ -41,32 +41,40 @@ function draw() {
     let mover = movers[m];
     let x = mover.x;
     let y = mover.y;
+
+    // Show accelerometer data
+    if (mover.acc) {
+      let acc = mover.acc;
+      push();
+      translate(0, height / 2);
+      display_avg(acc.avg);
+      display_dev(acc.dev);
+      display_hist(acc.hist);
+      pop();
+    }
+
     let cell = getCell(x, y);
     fill('red');
     rect(cell.x, cell.y, w, h);
     stroke(255);
     noFill();
     ellipse(x, y, DIAM);
-    if (mover.acc) {
-      let acc = mover.acc;
-      draw_msg(acc.msg, x, y);
-      translate(0, height / 2);
-      draw_avg(acc.cum_accs);
-      draw_dev(av, acc.cum_accs);
-      draw_cum(acc.cum_accs);
-    }
+
+    if(mover.acc) display_msg(mover.acc.msg, mover.acc.sum, x, y);
   }
 }
 
-function draw_avg(avg) {
+function display_avg(avg) {
   let w = width / XYZ;
   for (let a in avg) {
     let h = avg[a] / 2;
+    noStroke();
+    fill('purple');
     rect(a * w, 0, w / 2, h);
   }
 }
 
-function draw_dev(dev) {
+function display_dev(dev) {
   let w = width / XYZ;
   for (let d in dev) {
     let h = dev[d] / 2;
@@ -76,15 +84,15 @@ function draw_dev(dev) {
   }
 }
 
-function draw_hist(cum) {
-  let len = all.length * XYZ;
+function display_hist(hist) {
+  let len = hist.length * XYZ;
   let acc_w = width / len;
   let acc_y = height / 2;
-  for (let a in cum) {
-    let acc = cum[a];
+  for (let h in hist) {
+    let acc = hist[h];
     for (let xyz in acc) {
-      let acc_h = xyz[xy];
-      let acc_x = ((a * XYZ) + int(xyz)) * acc_w;
+      let acc_h = acc[xyz];
+      let acc_x = ((h * XYZ) + int(xyz)) * acc_w;
       stroke(0, 255, 0, 128);
       strokeWeight(acc_w / 2);
       line(acc_x, 0, acc_x, acc_h);
@@ -93,12 +101,11 @@ function draw_hist(cum) {
 
 }
 
-function display_msg(msg, x, y) {
-  const LEN = accs.length * XYZ;
+function display_msg(msg, sum, x, y) {
   push();
   translate(x, y);
   fill('green');
-  ellipse(0, 0, calc_acc(accs) / 2);
+  ellipse(0, 0, sum / 10);
   textSize(64);
   textAlign(CENTER);
   fill('blue');
