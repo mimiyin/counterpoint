@@ -23,8 +23,6 @@ const Y_OFF = -100;
 
 // Distance to Acceleration TH for filtering noisy pos data
 const XYZ = 3;
-const A2D_TH = 0;
-
 
 // Listen for data coming from the server
 function pozyx() {
@@ -48,67 +46,81 @@ function pozyx() {
         let pos = calc_pos(x, y);
         let accs = data.tagData.accelerometer;
 
-        // Load previous data or create new
-        //let tag = tags[id] || { x : pos.x, y : pos.y };
-        //if(id in tags) console.log(tags[id]);
-
         // Update data
         let tag = {};
-        tag.px = (id in tags) ? tags[id].x : pos.x;
-        tag.py = (id in tags) ? tags[id].y : pos.y;
+        let exists = id in tags;
+        tag.px = exists ? tags[id].x : pos.x;
+        tag.py = exists ? tags[id].y : pos.y;
         tag.x = pos.x;
         tag.y = pos.y;
-        tag.accs = accs;
+        let pkg = {};
+        pkg.accs = accs;
+        pkg.cum_accs = exists ? tags[id].acc.cum_accs : [];
+        pkg.cum_accs.push(...pkg.accs);
+        pkg.avg_acc = avg_acc(pkg.cum_accs);
+        pkg.dev_acc = dev_acc(pkg.avg_acc, pkg.cum_accs);
 
         // Calc distance travelled
-        let d = dist(tag.px, tag.py, tag.x, tag.y);
+        pkg.d = dist(tag.px, tag.py, tag.x, tag.y);
+        // Calc sum of accelerations
+        pkg.sum = sum_acc(accs);
 
-        // Calc ratio of distance to acceleration data
-        let a2d = calc_acc(accs) / (d + 1) || 0;
-        //if(a2d > 25) console.log('d2a', d, a2d)
-        // If there was too much movement, discard the data
-        // if(a2d > A2D_TH) {
-        //   // Only update acceleration data
-        //   if(id in tags) tags[id].accs = accs;
-        //   return;
-        // }
+        // If there is movement and no acceleration, reject!
+        if(pkg.d > 0 && pkg.sum < 400) pkg.msg = "\u{1F92A}";
+        else pkg.msg = round(pkg.d) + ' ' + round(pkg.sum);
 
-        tag.d = d;
-        tag.sum = calc_acc(accs);
-        if(tag.d > 0 && tag.sum < 500) tag.msg = "HA";
-        else tag.msg = round(tag.d) + ' ' + round(tag.sum);
+        // Assign pgk to tag
+        tag.acc = pkg; 
 
-        tags[id] = tag;
-        return;
-        if(tag.d > 0 && tag.sum < 400) {
-          tags[id].accs = accs;
-          tags[id].msg = "HA:" + round(tag.d) + "x:" + round(tag.sum);
-          console.log("REJECTED", round(tag.x), round(tags[id].x));
+        // Reject new positions
+        if(pkg.msg == "\u{1F92A}") {
+          tags[id].pkg = pkg;
+          console.log("REJECTED", pkg.d, pkg.sum);
           return;
         }
         // Otherwise, update it
-        else {
-          tags[id] = tag;
-          console.log('x', round(tag.x), round(tags[id].x));
-        }
-        //console.log(tags);
+        else tags[id] = tag;          
       }
     }
   });
 }
 
-function calc_acc(accs) {
+function dev_acc(avg, cum) {
+  let dev = [0, 0, 0];
+  for(let acc of cum) {
+    for(let xyz in acc) {
+      dev[xyz] += abs(acc[xyz] - avg[xyz]);
+    }
+  }
+  return dev;
+}
 
+
+function avg_acc(cum) {
+  let avg = [0, 0, 0];
+  for(let acc of all) {
+    for(let a in acc) {
+      avg[a] += acc[a];
+    }
+  }
+  for(let a in avg) {
+    avg[a] /= all.length;
+    noStroke();
+    fill('purple');
+    rect(a * w, 0, w/2, avg[a]);
+  }
+  return avg;
+}
+
+function sum_acc(accs) {
   let sum = 0;
   for(let acc of accs) {
     for(a = 0; a < XYZ; a++) {
       let xyz = acc[a];
-      //console.log(xyz);
       sum += abs(xyz);
     }
   }
-  //console.log('sum', sum, accs.length * XYZ);
-  return sum / (accs.length * XYZ);
+  return sum;
 }
 
 // Map poxyz to projection

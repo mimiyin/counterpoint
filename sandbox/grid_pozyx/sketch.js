@@ -1,5 +1,4 @@
-let movers = {}
-let all_accs = [];
+let movers = {};
 
 const COLS = 7;
 const ROWS = 10;
@@ -48,77 +47,53 @@ function draw() {
     stroke(255);
     noFill();
     ellipse(x, y, DIAM);
-    viz_accs(mover.msg, mover.accs, x, y);
-    if (mover.accs) {
-      all_accs.push(...mover.accs);
-      let diff = all_accs.length-50;
-      if (diff > 0) all_accs.splice(0, diff);
+    if (mover.acc) {
+      let acc = mover.acc;
+      draw_msg(acc.msg, x, y);
+      translate(0, height / 2);
+      draw_avg(acc.cum_accs);
+      draw_dev(av, acc.cum_accs);
+      draw_cum(acc.cum_accs);
     }
-    translate(0, height/2);
-    let av = avg(all_accs);
-    dev(av, all_accs);
-    hist(all_accs);
-
   }
-  
-  
-
 }
 
-function dev(avg, all) {
-   let w =  width/XYZ;
-  let dev = [0, 0, 0];
-  for(let acc of all) {
-    for(let a in acc) {
-      dev[a] += abs(acc[a] - avg[a]);
-    }
+function draw_avg(avg) {
+  let w = width / XYZ;
+  for (let a in avg) {
+    let h = avg[a] / 2;
+    rect(a * w, 0, w / 2, h);
   }
-  for(let d in dev) {
+}
+
+function draw_dev(dev) {
+  let w = width / XYZ;
+  for (let d in dev) {
+    let h = dev[d] / 2;
     noStroke();
     fill('orange');
-    rect(d * w + w/2, 0, w/2, dev[d]/2);
+    rect(d * w + w / 2, 0, w / 2, h);
   }
 }
 
-function avg(all) {
-  let w =  width/XYZ;
-  let avg = [0, 0, 0];
-  for(let acc of all) {
-    for(let a in acc) {
-      avg[a] += acc[a];
-    }
-  }
-  for(let a in avg) {
-    avg[a] /= all.length;
-    noStroke();
-    fill('purple');
-    rect(a * w, 0, w/2, avg[a]);
-  }
-  return avg;
-}
-
-function hist(all) {
+function draw_hist(cum) {
   let len = all.length * XYZ;
   let acc_w = width / len;
   let acc_y = height / 2;
-
-  
-  for (let acc in all) {
-    let xyz = all_accs[acc];
-    for (let xy in xyz) {
+  for (let a in cum) {
+    let acc = cum[a];
+    for (let xyz in acc) {
       let acc_h = xyz[xy];
-      let acc_x = ((acc * XYZ) + int(xy)) * acc_w;
+      let acc_x = ((a * XYZ) + int(xyz)) * acc_w;
       stroke(0, 255, 0, 128);
-      strokeWeight(acc_w/2);
+      strokeWeight(acc_w / 2);
       line(acc_x, 0, acc_x, acc_h);
     }
   }
 
 }
 
-function viz_accs(msg, accs, x, y) {
-
- 
+function display_msg(msg, x, y) {
   const LEN = accs.length * XYZ;
   push();
   translate(x, y);
@@ -128,19 +103,7 @@ function viz_accs(msg, accs, x, y) {
   textAlign(CENTER);
   fill('blue');
   stroke('white');
-  // let d2a = round(d, 0, 2) + ': ' + round(sum, 0, 2);
-  // if(d > 0 && sum < 500) d2a = "HA!";
   text(msg, 0, -1000);
-  // for(let ac = 0; ac < accs.length; ac++) {
-  //   let acc = accs[ac];
-  //   for(let a = 0; a < XYZ; a++) {
-  //     let xy = acc[a];
-  //     let r = map(abs(xy), 0, 200, 0, DIAM);
-  //     // + or - accel?
-  //     fill(xy > 0 ? 'green' : 'blue');
-  //     ellipse(0, 0, r);
-  //   }
-  // }
   pop();
 }
 
