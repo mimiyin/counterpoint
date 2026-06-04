@@ -1,7 +1,8 @@
-let movers = {}
+let movers = {};
 
 const COLS = 7;
 const ROWS = 10;
+const DIAM = 100;
 let w, h;
 let m_idx = 0;
 
@@ -10,19 +11,19 @@ function setup() {
   w = width / COLS;
   h = height / ROWS;
   pozyx();
-  init_movers(10);
+  if (!pozyx_on) init_movers(10);
 }
 
 function draw() {
 
   // Look for new tag data
   let m = 0;
-  for(let id in tags) {
+  for (let id in tags) {
     movers[m] = tags[id];
     m++;
   }
 
-  console.log('M', m);
+  //console.log('M',m);
 
   background(255);
   noStroke();
@@ -40,29 +41,77 @@ function draw() {
     let mover = movers[m];
     let x = mover.x;
     let y = mover.y;
+
+    // Show accelerometer data
+    if (mover.acc) {
+      let acc = mover.acc;
+      push();
+      translate(0, height / 2);
+      display_avg(acc.avg);
+      display_dev(acc.dev);
+      display_hist(acc.hist);
+      pop();
+    }
+
     let cell = getCell(x, y);
     fill('red');
     rect(cell.x, cell.y, w, h);
-    push();
-    fill('green');
-    ellipse(x, y, 50, 50);
-    pop();
-    calc_accel(mover.a);
+    stroke(255);
+    noFill();
+    ellipse(x, y, DIAM);
+
+    if(mover.acc) display_msg(mover.acc.msg, mover.acc.sum, x, y);
   }
-  
 }
 
-function calc_accel(accels) {
-  let x = 0;
-  let w = width/accels.length;
-  for(let a = 1; a < accels.length; a++) {
-    let a0 = accels[a-1];
-    let a1 = accels[a];
-    let d = dist(a0[0], a0[1], a0[2], a1[0], a1[1], a1[2]);
-    fill(0, 255, 0, 100);
-    rect(x, 0, w, d*10);
-    x+=w;
+function display_avg(avg) {
+  let w = width / XYZ;
+  for (let a in avg) {
+    let h = avg[a] / 2;
+    noStroke();
+    fill('purple');
+    rect(a * w, 0, w / 2, h);
   }
+}
+
+function display_dev(dev) {
+  let w = width / XYZ;
+  for (let d in dev) {
+    let h = dev[d] / 2;
+    noStroke();
+    fill('orange');
+    rect(d * w + w / 2, 0, w / 2, h);
+  }
+}
+
+function display_hist(hist) {
+  let len = hist.length * XYZ;
+  let acc_w = width / len;
+  let acc_y = height / 2;
+  for (let h in hist) {
+    let acc = hist[h];
+    for (let xyz in acc) {
+      let acc_h = acc[xyz];
+      let acc_x = ((h * XYZ) + int(xyz)) * acc_w;
+      stroke(0, 255, 0, 128);
+      strokeWeight(acc_w / 2);
+      line(acc_x, 0, acc_x, acc_h);
+    }
+  }
+
+}
+
+function display_msg(msg, sum, x, y) {
+  push();
+  translate(x, y);
+  fill('green');
+  ellipse(0, 0, sum / 10);
+  textSize(64);
+  textAlign(CENTER);
+  fill('blue');
+  stroke('white');
+  text(msg, 0, -1000);
+  pop();
 }
 
 function getCell(x, y) {
