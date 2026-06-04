@@ -9,23 +9,25 @@ let word_files = {};
 
 let chains = {};
 let word = 'hello';
+let speech = [];
 
 let t = 0;
 let dir = 1;
 
 function process(lines) {
+  console.log(lines);
   lines.forEach((line) => {
-    let words = line.split(' ');
-    let first = words[0];
-    let second = words[1];
-    if (!(first in chains)) chains[first] = [];
-    chains[first].push(second)
+    let tokens = splitTokens(line, ' ');
+    speech.push(...tokens);
+    // let first = words[0];
+    // let second = words[1];
+    // if (!(first in chains)) chains[first] = [];
+    // chains[first].push(second)
   });
 
-  console.log(chains);
+  console.log(words);
 }
 
-//let words = ['i', 'you', 'me', 'us', 'here', 'now', 'there', 'then', 'why', 'because'];
 function preload() {
   loadStrings('text.txt', process);
   for(let word of words) {
@@ -39,6 +41,10 @@ function setup() {
   h = height / ROWS;
 
   console.log(word_files);
+
+  // Start random spot
+  t = random(speech.length);
+
   // Set up pozyx
   pozyx();
 
@@ -50,7 +56,7 @@ function setup() {
   }
 
   // Create fake data
-  if (!pozyx_on) init_movers(2);
+  if (!pozyx_on) init_movers(1);
 }
 
 function draw() {
@@ -89,23 +95,25 @@ function draw() {
     cell.occupy();
     if (mover.still()) {
       // Noodle
-      dir = random(1) < 0.8 ? dir : -dir;
-      let d = random(1) < 0.8 ? 1 : 0.5;
-      d *= dir;
-      t += d;
-      t = constrain(t, 0, words.length-1);
+      // dir = random(1) < 0.8 ? dir : -dir;
+      // let d = random(1) < 0.8 ? 1 : 0.5;
+      // d *= dir;
+      // t += d;
+      t++;
+      t%=speech.length;
+      //t = constrain(t, 0, words.length-1);
 
       // Randomize
-      if(random(1) > 0.8) t = random(0, words.length);
+      //if(random(1) > 0.8) t = random(0, words.length);
 
       // Change direction
-      if(t < 1 && dir < 0) dir = 1;
-      if(t >= words.length - 1 && dir > 0) dir = -1;
+      // if(t < 1 && dir < 0) dir = 1;
+      // if(t >= words.length - 1 && dir > 0) dir = -1;
 
 
       let w = floor(t);
-      console.log(t, w, words[w]);
-      cell.speak(words[w]);
+      console.log(t, w, speech[w]);
+      cell.speak(speech[w]);
       //let n = floor(random(chains[word].length)) || 0;
       //word = chains[word][n];
       //console.log("next word", word);
