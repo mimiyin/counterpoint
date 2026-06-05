@@ -29,6 +29,10 @@ let gameState = 'idle';
 let pendingComputerDir = null;
 let computerDelayStart = 0;
 
+const POZYX_DWELL_MS = 150;
+let pozyxPendingCell = null;
+let pozyxPendingStart = 0;
+
 const humanDistanceHistory = [];
 
 const RESPONSE_PROFILES = [
@@ -458,7 +462,12 @@ function draw() {
     let tag = tags[TRACKED_TAG_ID];
     if (tag) {
       let cell = getCellFromCanvas(tag.x, tag.y);
-      requestHumanMoveToCell(cell.col, cell.row);
+      if (!pozyxPendingCell || pozyxPendingCell.col !== cell.col || pozyxPendingCell.row !== cell.row) {
+        pozyxPendingCell = cell;
+        pozyxPendingStart = millis();
+      } else if (millis() - pozyxPendingStart >= POZYX_DWELL_MS) {
+        requestHumanMoveToCell(cell.col, cell.row);
+      }
     }
   }
 

@@ -2,7 +2,7 @@
 const fs = require('fs');
 const readFile = fs.promises.readFile;
 let record = false;
-let live = false;
+let live = true;
 let sd = 0;
 
 // Async function get saved data
