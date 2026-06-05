@@ -15,19 +15,11 @@ const DIRECTIONS = {
   'down-right': { dc:  1, dr:  1 },
 };
 
-const POZYX_PROJECTION = {
-  xMult: 0.375,
-  yMult: 0.375,
-  xOffset: 1250,
-  yOffset: 0,
-};
-
 let currentProfileIndex = 0;
 let showDebug = true;
 
 let w;
 let h;
-let socket;
 
 let humanMover;
 let computerMover;
@@ -421,8 +413,6 @@ function setup() {
   computerMover = new Mover(5, 6, color('#c92a2a'), 'ease', ['left', 'right', 'up', 'down', 'up-left', 'up-right', 'down-left', 'down-right']);
   applyProfile(computerMover, RESPONSE_PROFILES[currentProfileIndex]);
 
-  setupInput();
-
   console.log('Input mode:', INPUT_MODE);
   console.log('Strategy:', STRATEGY_PROGRAM[currentProgramStep]);
   console.log('Profile:', RESPONSE_PROFILES[currentProfileIndex].name);
@@ -461,6 +451,14 @@ function draw() {
     }
     if (delayElapsed && !humanMover.isMoving() && !computerMover.isMoving()) {
       gameState = 'idle';
+    }
+  }
+
+  if (INPUT_MODE === 'POZYX') {
+    let tag = tags[TRACKED_TAG_ID];
+    if (tag) {
+      let cell = getCellFromCanvas(tag.x, tag.y);
+      requestHumanMoveToCell(cell.col, cell.row);
     }
   }
 
@@ -569,7 +567,7 @@ function keyPressed() {
 
   if (key === 'i' || key === 'I') {
     INPUT_MODE = (INPUT_MODE === 'KEYBOARD') ? 'POZYX' : 'KEYBOARD';
-    if (INPUT_MODE === 'POZYX') setupInput();
+    if (INPUT_MODE === 'POZYX') pozyx();
     console.log('Input mode:', INPUT_MODE);
     return;
   }
@@ -725,39 +723,6 @@ function getDirectionFromCells(fromCol, fromRow, toCol, toRow) {
   if (dc === -1 && dr ===  1) return 'down-left';
   if (dc ===  1 && dr ===  1) return 'down-right';
   return null;
-}
-
-function setupInput() {
-  if (INPUT_MODE !== 'POZYX') return;
-  if (socket) return;
-  if (typeof io !== 'function') {
-    console.warn('Socket.io client is unavailable.');
-    return;
-  }
-
-  socket = io();
-  socket.on('connect', function () {
-    console.log("HEY, I'VE CONNECTED: ", socket.id);
-  });
-  socket.on('pozyx', handlePozyxMessage);
-}
-
-function handlePozyxMessage(message) {
-  let tag = Array.isArray(message) ? message[0] : message;
-  if (!tag || tag.tagId !== TRACKED_TAG_ID) return;
-
-  let coordinates = tag.data && tag.data.coordinates;
-  if (!coordinates) return;
-
-  let projected = projectPozyxToCanvas(coordinates.x, coordinates.y);
-  let cell = getCellFromCanvas(projected.x, projected.y);
-  requestHumanMoveToCell(cell.col, cell.row);
-}
-
-function projectPozyxToCanvas(x, y) {
-  let translatedX = (x + POZYX_PROJECTION.xOffset) * POZYX_PROJECTION.xMult;
-  let translatedY = (y + POZYX_PROJECTION.yOffset) * POZYX_PROJECTION.yMult;
-  return { x: translatedX, y: translatedY };
 }
 
 function getCellFromCanvas(x, y) {
