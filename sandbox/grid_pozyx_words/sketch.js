@@ -60,7 +60,7 @@ function setup() {
 }
 
 function draw() {
-  background(0);
+  background(255);
   noStroke();
 
   // Look for new tag data
@@ -72,6 +72,7 @@ function draw() {
     }
   }
 
+  console.log(movers);
 
   // Draw cells
   // Reset them all to empty
@@ -91,7 +92,8 @@ function draw() {
     let mover = movers[m];
     mover.move();
     mover.count(0);
-    let cell = locate(mover.x, mover.y);
+    
+    let cell = locate(mover.x, mover.y);    
     cell.occupy();
     if (mover.still()) {
       // Noodle
@@ -142,8 +144,9 @@ function get_random_mover() {
 }
 
 function locate(x, y) {
-  let r = floor(y / h);
+  
   let c = floor(x / w);
+  let r = floor(y / h);
   return cells[r][c];
 }
 
