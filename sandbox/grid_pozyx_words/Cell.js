@@ -24,8 +24,8 @@ class Cell {
     }
 
     display() {
-        stroke('white');
-        fill(255, this.ready ? 0 : 255);
+        
+        fill(0, this.ready ? 0 : 255);
         rect(this.x, this.y, this.w, this.h);
     }
 
