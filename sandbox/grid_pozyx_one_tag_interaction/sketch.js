@@ -29,7 +29,7 @@ let gameState = 'idle';
 let pendingComputerDir = null;
 let computerDelayStart = 0;
 
-const POZYX_DWELL_MS = 150;
+const POZYX_DWELL_MS = 250;
 let pozyxPendingCell = null;
 let pozyxPendingStart = 0;
 
