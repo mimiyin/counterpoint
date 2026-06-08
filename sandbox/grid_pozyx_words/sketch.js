@@ -11,7 +11,7 @@ let chains = {};
 let word = 'hello';
 let speech = [];
 
-let t = 0;
+let t = -1;
 let dir = 1;
 
 function process(lines) {
@@ -43,7 +43,7 @@ function setup() {
   console.log(word_files);
 
   // Start random spot
-  t = random(speech.length);
+  //t = 0; //random(speech.length);
 
   // Set up pozyx
   pozyx();
@@ -72,7 +72,7 @@ function draw() {
     }
   }
 
-  console.log(movers);
+  //console.log(movers);
 
   // Draw cells
   // Reset them all to empty
