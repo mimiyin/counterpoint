@@ -17,6 +17,7 @@ const DIRECTIONS = {
 
 let currentProfileIndex = 0;
 let showDebug = true;
+let showHuman = true;
 
 let w;
 let h;
@@ -471,7 +472,7 @@ function draw() {
     }
   }
 
-  humanMover.display(w, h);
+  if (showHuman) humanMover.display(w, h);
   computerMover.display(w, h);
   if (showDebug) drawStatus();
 }
@@ -491,7 +492,7 @@ function drawGrid() {
 function drawStatus() {
   push();
   fill(255, 235);
-  rect(12, 12, 700, 308);
+  rect(12, 12, 700, 348);
   fill(0);
   textSize(28);
   textAlign(LEFT, TOP);
@@ -552,15 +553,20 @@ function drawStatus() {
   fill(keyColor); text('D', tdX, 200);
   fill(0); text(')', tdX + textWidth('D'), 200);
 
-  fill(0); text('Reset (', x, 240);
-  let trX = x + textWidth('Reset (');
-  fill(keyColor); text('R', trX, 240);
-  fill(0); text(')', trX + textWidth('R'), 240);
+  fill(0); text('Toggle Human (', x, 240);
+  let thX = x + textWidth('Toggle Human (');
+  fill(keyColor); text('H', thX, 240);
+  fill(0); text(')', thX + textWidth('H'), 240);
 
-  fill(0); text('Reset Further (', x, 280);
+  fill(0); text('Reset (', x, 280);
+  let trX = x + textWidth('Reset (');
+  fill(keyColor); text('R', trX, 280);
+  fill(0); text(')', trX + textWidth('R'), 280);
+
+  fill(0); text('Reset Further (', x, 320);
   let tfX = x + textWidth('Reset Further (');
-  fill(keyColor); text('F', tfX, 280);
-  fill(0); text(')', tfX + textWidth('F'), 280);
+  fill(keyColor); text('F', tfX, 320);
+  fill(0); text(')', tfX + textWidth('F'), 320);
 
   pop();
 }
@@ -588,6 +594,11 @@ function keyPressed() {
 
   if (key === 'd' || key === 'D') {
     showDebug = !showDebug;
+    return;
+  }
+
+  if (key === 'h' || key === 'H') {
+    showHuman = !showHuman;
     return;
   }
 
