@@ -17,6 +17,7 @@ const DIRECTIONS = {
 
 let currentProfileIndex = 0;
 let showDebug = true;
+let showHuman = true;
 
 let w;
 let h;
@@ -471,7 +472,7 @@ function draw() {
     }
   }
 
-  humanMover.display(w, h);
+  if (showHuman) humanMover.display(w, h);
   computerMover.display(w, h);
   if (showDebug) drawStatus();
 }
@@ -491,7 +492,7 @@ function drawGrid() {
 function drawStatus() {
   push();
   fill(255, 235);
-  rect(12, 12, 700, 268);
+  rect(12, 12, 700, 348);
   fill(0);
   textSize(28);
   textAlign(LEFT, TOP);
@@ -552,10 +553,20 @@ function drawStatus() {
   fill(keyColor); text('D', tdX, 200);
   fill(0); text(')', tdX + textWidth('D'), 200);
 
-  fill(0); text('Reset (', x, 240);
+  fill(0); text('Toggle Human (', x, 240);
+  let thX = x + textWidth('Toggle Human (');
+  fill(keyColor); text('H', thX, 240);
+  fill(0); text(')', thX + textWidth('H'), 240);
+
+  fill(0); text('Reset (', x, 280);
   let trX = x + textWidth('Reset (');
-  fill(keyColor); text('R', trX, 240);
-  fill(0); text(')', trX + textWidth('R'), 240);
+  fill(keyColor); text('R', trX, 280);
+  fill(0); text(')', trX + textWidth('R'), 280);
+
+  fill(0); text('Reset Further (', x, 320);
+  let tfX = x + textWidth('Reset Further (');
+  fill(keyColor); text('F', tfX, 320);
+  fill(0); text(')', tfX + textWidth('F'), 320);
 
   pop();
 }
@@ -586,8 +597,18 @@ function keyPressed() {
     return;
   }
 
+  if (key === 'h' || key === 'H') {
+    showHuman = !showHuman;
+    return;
+  }
+
   if (key === 'r' || key === 'R') {
     resetComputer();
+    return;
+  }
+
+  if (key === 'f' || key === 'F') {
+    resetComputerFurther();
     return;
   }
 
@@ -693,8 +714,9 @@ function beginComputerDelay() {
 }
 
 function resetComputer() {
-  let adjacent = Object.values(DIRECTIONS)
-    .map(d => ({ col: humanMover.col + d.dc, row: humanMover.row + d.dr }))
+  const CARDINALS = ['up', 'down', 'left', 'right'];
+  let adjacent = CARDINALS
+    .map(dir => ({ col: humanMover.col + DIRECTIONS[dir].dc, row: humanMover.row + DIRECTIONS[dir].dr }))
     .filter(cell => isCellInBounds(cell.col, cell.row));
 
   if (adjacent.length === 0) return;
@@ -710,6 +732,22 @@ function resetComputer() {
   computerMover._toRow = target.row;
   computerMover._moving = false;
   console.log(`[reset] computer → (${target.col}, ${target.row})`);
+}
+
+function resetComputerFurther() {
+  let targetCol = (COLS - 1) - humanMover.col;
+  let targetRow = (ROWS - 1) - humanMover.row;
+
+  gameState = 'idle';
+  pendingComputerDir = null;
+  computerMover.col = targetCol;
+  computerMover.row = targetRow;
+  computerMover._fromCol = targetCol;
+  computerMover._fromRow = targetRow;
+  computerMover._toCol = targetCol;
+  computerMover._toRow = targetRow;
+  computerMover._moving = false;
+  console.log(`[reset further] computer → (${targetCol}, ${targetRow})`);
 }
 
 function applyProfile(mover, profile) {
