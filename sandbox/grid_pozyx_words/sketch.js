@@ -30,7 +30,7 @@ function process(lines) {
 
 function preload() {
   loadStrings('text.txt', process);
-  for(let word of words) {
+  for (let word of words) {
     word_files[word] = loadSound('words/' + word + '.wav');
   }
 }
@@ -64,9 +64,9 @@ function draw() {
   noStroke();
 
   // Look for new tag data
-  for(let id in tags) {
+  for (let id in tags) {
     let pos = tags[id];
-    if(id in movers) movers[id].update(pos.x, pos.y)
+    if (id in movers) movers[id].update(pos.x, pos.y)
     else {
       movers[id] = new Mover(id, pos.x, pos.y);
     }
@@ -82,7 +82,7 @@ function draw() {
       cell.display();
     }
   }
-  
+
 
   // Check movers
   // Occupy cells
@@ -93,33 +93,38 @@ function draw() {
     mover.move();
     mover.count(0);
     
-    let cell = locate(mover.x, mover.y);    
-    cell.occupy();
-    if (mover.still()) {
-      // Noodle
-      // dir = random(1) < 0.8 ? dir : -dir;
-      // let d = random(1) < 0.8 ? 1 : 0.5;
-      // d *= dir;
-      // t += d;
-      t++;
-      t%=speech.length;
-      //t = constrain(t, 0, words.length-1);
+    try {
+      let cell = locate(mover.x, mover.y);
+      cell.occupy();
+      if (mover.still()) {
+        // Noodle
+        // dir = random(1) < 0.8 ? dir : -dir;
+        // let d = random(1) < 0.8 ? 1 : 0.5;
+        // d *= dir;
+        // t += d;
+        t++;
+        t %= speech.length;
+        //t = constrain(t, 0, words.length-1);
 
-      // Randomize
-      //if(random(1) > 0.8) t = random(0, words.length);
+        // Randomize
+        //if(random(1) > 0.8) t = random(0, words.length);
 
-      // Change direction
-      // if(t < 1 && dir < 0) dir = 1;
-      // if(t >= words.length - 1 && dir > 0) dir = -1;
+        // Change direction
+        // if(t < 1 && dir < 0) dir = 1;
+        // if(t >= words.length - 1 && dir > 0) dir = -1;
 
 
-      let w = floor(t);
-      console.log(t, w, speech[w]);
-      cell.speak(speech[w]);
-      //let n = floor(random(chains[word].length)) || 0;
-      //word = chains[word][n];
-      //console.log("next word", word);
-      mover.silence();
+        let w = floor(t);
+        console.log(t, w, speech[w]);
+        cell.speak(speech[w]);
+        //let n = floor(random(chains[word].length)) || 0;
+        //word = chains[word][n];
+        //console.log("next word", word);
+        mover.silence();
+      }
+    }
+    catch(e) {
+      console.log('OUT OF BOUNDS!');
     }
     mover.display();
   }
@@ -136,15 +141,15 @@ function draw() {
 }
 
 function get_random_mover() {
-    let movers_arr = [];
-    for(let m in movers) {
-      movers_arr.push(movers[m]);
-    }
-    return(random(movers_arr));
+  let movers_arr = [];
+  for (let m in movers) {
+    movers_arr.push(movers[m]);
+  }
+  return (random(movers_arr));
 }
 
 function locate(x, y) {
-  
+
   let c = floor(x / w);
   let r = floor(y / h);
   return cells[r][c];
@@ -152,7 +157,7 @@ function locate(x, y) {
 
 function calc_avg() {
   // Calculate avg position
-  let avg = { x : 0, y : 0 };
+  let avg = { x: 0, y: 0 };
   let count = 0;
   for (let m in movers) {
     let mover = movers[m];
