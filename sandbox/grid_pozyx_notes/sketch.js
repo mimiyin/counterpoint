@@ -20,7 +20,7 @@ let waxed = false;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  diag = sqrt(sq(width) + sq(height));
+  diag = height; //sqrt(sq(width) + sq(height));
 
   // Set up pozyx
   pozyx();
