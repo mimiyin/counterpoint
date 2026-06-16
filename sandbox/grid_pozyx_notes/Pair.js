@@ -19,7 +19,7 @@ class Pair {
 
     set() {
         // Calculate frequency mapped to distance
-        let r = floor(map(this.dist(), 0, diag, 0, RATIOS.length));
+        let r = floor(map(this.dist(), 50, diag, 0, RATIOS.length));
         let f = floor(RATIOS[r] * BASE);
 
         // No change
