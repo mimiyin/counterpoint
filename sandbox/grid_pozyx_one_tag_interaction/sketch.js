@@ -36,6 +36,36 @@ let pozyxPendingStart = 0;
 
 const humanDistanceHistory = [];
 
+const THRESHOLD_STEP = 0.1;
+const THRESHOLD_MIN = 0.1;
+const THRESHOLD_MAX = 0.9;
+
+// The STRATEGY_PROGRAM array defines the sequence of strategies 
+// that will be cycled through when the user presses the 'S' key. 
+// Each entry corresponds to a strategy defined in the strategies array below. 
+// See strategies comment for details on each strategy.
+// This allows for easy switching between different computer response behaviors during runtime.
+const STRATEGY_PROGRAM = [
+  'static/mimic-human-direction',
+  'streak/mimic-human-direction', // use first streak to introduce surpise
+
+  'static/mimic-human-distance', // then goes to distanc mimic
+  'streak/mimic-human-distance', // another streak for surprise
+
+  'elastic/mimic-human-direction', // goes to elastic. tracking mimic/not-mimic. the type of mimicry is direction.
+  'elastic/mimic-human-distance', // again, tracking mimic/not-mimic, but this time the type of mimicry is distance (closer/further).
+
+  // 'elastic/self-distance', // then tracking its own distance behaviour regardless of human's behaviour. 
+  'elastic/human-distance', // then tracking human's distance behaviour regardless of its own. 
+                            // default threshold 04 is clingy
+                            // you'd need to try to take a consetive number of closer steps to make it choose further
+  
+  // 'phrase/random', // using AxxxB phrases. Not good fow now.
+
+  'random/random',
+];
+let currentProgramStep = 0;
+
 const RESPONSE_PROFILES = [
   {
     // Computer waits for human to finish, then responds after a delay.
@@ -104,32 +134,6 @@ const responseTypes = {
     return validMoves.length > 0 ? random(validMoves) : null;
   },
 };
-
-// The STRATEGY_PROGRAM array defines the sequence of strategies 
-// that will be cycled through when the user presses the 'S' key. 
-// Each entry corresponds to a strategy defined in the strategies array below. 
-// See strategies comment for details on each strategy.
-// This allows for easy switching between different computer response behaviors during runtime.
-const STRATEGY_PROGRAM = [
-  'static/mimic-human-direction',
-  'streak/mimic-human-direction', // use first streak to introduce surpise
-
-  'static/mimic-human-distance', // then goes to distanc mimic
-  'streak/mimic-human-distance', // another streak for surprise
-
-  'elastic/mimic-human-direction', // goes to elastic. tracking mimic/not-mimic. the type of mimicry is direction.
-  'elastic/mimic-human-distance', // again, tracking mimic/not-mimic, but this time the type of mimicry is distance (closer/further).
-
-  // 'elastic/self-distance', // then tracking its own distance behaviour regardless of human's behaviour. 
-  'elastic/human-distance', // then tracking human's distance behaviour regardless of its own. 
-                            // default threshold 04 is clingy
-                            // you'd need to try to take a consetive number of closer steps to make it choose further
-  
-  // 'phrase/random', // using AxxxB phrases. Not good fow now.
-
-  'random/random',
-];
-let currentProgramStep = 0;
 
 const strategies = [
   {
@@ -491,8 +495,10 @@ function drawGrid() {
 
 function drawStatus() {
   push();
+  let threshold = getCurrentThresholdInfo();
+  let panelHeight = threshold ? 468 : 428;
   fill(255, 235);
-  rect(12, 12, 700, 348);
+  rect(12, 12, 700, panelHeight);
   fill(0);
   textSize(28);
   textAlign(LEFT, TOP);
@@ -509,12 +515,15 @@ function drawStatus() {
   textStyle(BOLD);
   text(INPUT_MODE, iParenX + textWidth('I') + textWidth('): '), 40);
 
+  textStyle(NORMAL);
+  fill(0); text('------------------------------', x, 80);
+
   // Strategy (S):
   textStyle(NORMAL);
-  fill(0); text('Strategy (', x, 80);
+  fill(0); text('Strategy (', x, 120);
   let sParenX = x + textWidth('Strategy (');
-  fill(keyColor); text('S', sParenX, 80);
-  fill(0); text('): ', sParenX + textWidth('S'), 80);
+  fill(keyColor); text('S', sParenX, 120);
+  fill(0); text('): ', sParenX + textWidth('S'), 120);
   let strategyX = sParenX + textWidth('S') + textWidth('): ');
   textStyle(BOLD);
   let strategyFull = STRATEGY_PROGRAM[currentProgramStep].toUpperCase();
@@ -522,56 +531,83 @@ function drawStatus() {
   if (slashIdx !== -1) {
     fill(200, 0, 0);
     let beforeSlash = strategyFull.slice(0, slashIdx);
-    text(beforeSlash, strategyX, 80);
+    text(beforeSlash, strategyX, 120);
     fill(0);
-    text(strategyFull.slice(slashIdx), strategyX + textWidth(beforeSlash), 80);
+    text(strategyFull.slice(slashIdx), strategyX + textWidth(beforeSlash), 120);
   } else {
-    fill(0); text(strategyFull, strategyX, 80);
+    fill(0); text(strategyFull, strategyX, 120);
   }
+
+  let nextY = 160;
+  if (threshold) {
+    // Threshold (Left/Right):
+    textStyle(NORMAL);
+    fill(0); text(`${threshold.label} (`, x, nextY);
+    let tParenX = x + textWidth(`${threshold.label} (`);
+    fill(keyColor); text('LEFT/RIGHT', tParenX, nextY);
+    fill(0); text('): ', tParenX + textWidth('LEFT/RIGHT'), nextY);
+    textStyle(BOLD);
+    text(threshold.value.toFixed(1), tParenX + textWidth('LEFT/RIGHT') + textWidth('): '), nextY);
+    nextY += 40;
+  }
+
+  textStyle(NORMAL);
+  fill(0); text('------------------------------', x, nextY);
+  nextY += 40;
 
   // Profile (P):
   textStyle(NORMAL);
-  fill(0); text('Profile (', x, 120);
+  fill(0); text('Profile (', x, nextY);
   let pParenX = x + textWidth('Profile (');
-  fill(keyColor); text('P', pParenX, 120);
-  fill(0); text('): ', pParenX + textWidth('P'), 120);
+  fill(keyColor); text('P', pParenX, nextY);
+  fill(0); text('): ', pParenX + textWidth('P'), nextY);
   textStyle(BOLD);
-  text(RESPONSE_PROFILES[currentProfileIndex].name.toUpperCase(), pParenX + textWidth('P') + textWidth('): '), 120);
+  text(RESPONSE_PROFILES[currentProfileIndex].name.toUpperCase(), pParenX + textWidth('P') + textWidth('): '), nextY);
+  nextY += 40;
 
   // Tracked tag:
   textStyle(NORMAL);
   fill(0);
   let l4 = 'Tracked tag: ';
-  text(l4, x, 160);
+  text(l4, x, nextY);
   textStyle(BOLD);
-  text(TRACKED_TAG_ID, x + textWidth(l4), 160);
+  text(TRACKED_TAG_ID, x + textWidth(l4), nextY);
+  nextY += 40;
 
   // Toggle lines
   textStyle(NORMAL);
-  fill(0); text('Toggle Status (', x, 200);
-  let tdX = x + textWidth('Toggle Status (');
-  fill(keyColor); text('D', tdX, 200);
-  fill(0); text(')', tdX + textWidth('D'), 200);
+  fill(0); text('Toggle Display Status (', x, nextY);
+  let tdX = x + textWidth('Toggle Display Status (');
+  fill(keyColor); text('D', tdX, nextY);
+  fill(0); text(')', tdX + textWidth('D'), nextY);
+  nextY += 40;
 
-  fill(0); text('Toggle Human (', x, 240);
+  fill(0); text('Toggle Human (', x, nextY);
   let thX = x + textWidth('Toggle Human (');
-  fill(keyColor); text('H', thX, 240);
-  fill(0); text(')', thX + textWidth('H'), 240);
+  fill(keyColor); text('H', thX, nextY);
+  fill(0); text(')', thX + textWidth('H'), nextY);
+  nextY += 40;
 
-  fill(0); text('Reset (', x, 280);
+  fill(0); text('Reset (', x, nextY);
   let trX = x + textWidth('Reset (');
-  fill(keyColor); text('R', trX, 280);
-  fill(0); text(')', trX + textWidth('R'), 280);
+  fill(keyColor); text('R', trX, nextY);
+  fill(0); text(')', trX + textWidth('R'), nextY);
+  nextY += 40;
 
-  fill(0); text('Reset Further (', x, 320);
+  fill(0); text('Reset Further (', x, nextY);
   let tfX = x + textWidth('Reset Further (');
-  fill(keyColor); text('F', tfX, 320);
-  fill(0); text(')', tfX + textWidth('F'), 320);
+  fill(keyColor); text('F', tfX, nextY);
+  fill(0); text(')', tfX + textWidth('F'), nextY);
 
   pop();
 }
 
 function keyPressed() {
+  if (keyCode === LEFT_ARROW || keyCode === RIGHT_ARROW) {
+    adjustCurrentThreshold(keyCode === LEFT_ARROW ? -THRESHOLD_STEP : THRESHOLD_STEP);
+    return false;
+  }
+
   if (key === 's' || key === 'S') {
     currentProgramStep = (currentProgramStep + 1) % STRATEGY_PROGRAM.length;
     console.log('Strategy:', STRATEGY_PROGRAM[currentProgramStep]);
@@ -628,6 +664,33 @@ function keyPressed() {
 
   if (!dirKey) return;
   requestHumanMove(dirKey);
+}
+
+function getCurrentStrategy() {
+  return strategies.find(s => s.name === STRATEGY_PROGRAM[currentProgramStep]);
+}
+
+function getCurrentThresholdInfo() {
+  let strategy = getCurrentStrategy();
+  if (!strategy) return null;
+
+  if ('mimicThreshold' in strategy) {
+    return { strategy, key: 'mimicThreshold', label: 'Mimic Threshold', value: strategy.mimicThreshold };
+  }
+
+  if ('closerThreshold' in strategy) {
+    return { strategy, key: 'closerThreshold', label: 'Closer Threshold', value: strategy.closerThreshold };
+  }
+
+  return null;
+}
+
+function adjustCurrentThreshold(delta) {
+  let threshold = getCurrentThresholdInfo();
+  if (!threshold) return;
+
+  threshold.strategy[threshold.key] = Number(constrain(threshold.value + delta, THRESHOLD_MIN, THRESHOLD_MAX).toFixed(1));
+  console.log(`${threshold.label}:`, threshold.strategy[threshold.key].toFixed(1));
 }
 
 function windowResized() {
