@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Counterpoint — Studies in Human–Computer Movement and Response</title>
+  <meta name="description" content="Counterpoint is a series of studies in movement, response, memory, prediction, and computational independence." />
+  <style>
+    :root {
+      --paper: #f3f2ee;
+      --ink: #11110f;
+      --muted: #706f68;
+      --line: rgba(17,17,15,.18);
+      --red: #e4382c;
+      --green: #2e9b57;
+      --yellow: #e7c94b;
+      --max: 1540px;
+      --pad: clamp(20px, 4vw, 64px);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+
+    .page {
+      width: min(100%, var(--max));
+      margin: 0 auto;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      background: var(--paper);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: 56px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 0 var(--pad);
+      border-bottom: 1px solid var(--line);
+      background: rgba(243,242,238,.92);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+
+    .nav {
+      display: flex;
+      gap: 24px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .11em;
+    }
+
+    .nav a:hover { opacity: .5; }
+
+    .hero {
+      min-height: calc(100vh - 56px);
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(360px, .98fr);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-copy {
+      padding: clamp(52px, 7vw, 112px) var(--pad) 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 760px;
+    }
+
+    .eyebrow {
+      margin: 0 0 22px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .17em;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 980px;
+      font-size: clamp(52px, 7.2vw, 116px);
+      font-weight: 500;
+      line-height: .89;
+      letter-spacing: -.068em;
+    }
+
+    h1 em {
+      display: block;
+      margin-top: .15em;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-weight: 400;
+      letter-spacing: -.045em;
+    }
+
+    .hero-bottom {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 42px;
+      align-items: end;
+      margin-top: 78px;
+    }
+
+    .hero-thesis {
+      max-width: 590px;
+      margin: 0;
+      font-size: clamp(22px, 2vw, 34px);
+      line-height: 1.12;
+      letter-spacing: -.025em;
+    }
+
+    .hero-note {
+      margin: 0;
+      max-width: 330px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .hero-stage {
+      position: relative;
+      min-height: 760px;
+      overflow: hidden;
+      border-left: 1px solid var(--line);
+      background-color: #e7e5df;
+      background-image:
+        linear-gradient(45deg, rgba(17,17,15,.92) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(17,17,15,.92) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(17,17,15,.92) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(17,17,15,.92) 75%);
+      background-size: 120px 120px;
+      background-position: 0 0, 0 60px, 60px -60px, -60px 0;
+      cursor: crosshair;
+    }
+
+    .stage-wash {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(243,242,238,.06), rgba(243,242,238,.26));
+      pointer-events: none;
+    }
+
+    .mover {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 6px rgba(243,242,238,.72);
+      z-index: 4;
+    }
+
+    .mover.human { background: var(--green); left: 31%; top: 63%; }
+    .mover.computer { background: var(--red); left: 66%; top: 39%; transition: left .52s cubic-bezier(.22,.78,.24,1), top .52s cubic-bezier(.22,.78,.24,1); }
+
+    .trace {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      opacity: .42;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hero-label {
+      position: absolute;
+      z-index: 6;
+      padding: 8px 10px;
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      font: 11px/1.1 'Courier New', monospace;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .label-human { left: 18px; bottom: 18px; }
+    .label-computer { right: 18px; top: 18px; }
+
+    .stage-instruction {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      z-index: 6;
+      max-width: 180px;
+      padding: 10px 12px;
+      font-size: 12px;
+      background: rgba(243,242,238,.92);
+      border: 1px solid var(--line);
+    }
+
+    .section {
+      border-bottom: 1px solid var(--line);
+      padding: clamp(72px, 9vw, 144px) var(--pad);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 36px;
+      margin-bottom: clamp(52px, 7vw, 100px);
+    }
+
+    .section-index {
+      font: 12px/1 'Courier New', monospace;
+      letter-spacing: .12em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .section-title {
+      margin: 0;
+      max-width: 1000px;
+      font-size: clamp(38px, 5.2vw, 82px);
+      font-weight: 500;
+      line-height: .98;
+      letter-spacing: -.05em;
+    }
+
+    .section-intro {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      margin-left: 216px;
+      margin-bottom: 72px;
+      max-width: 1050px;
+    }
+
+    .section-intro .lead {
+      margin: 0;
+      font-size: clamp(22px, 2.4vw, 37px);
+      line-height: 1.16;
+      letter-spacing: -.028em;
+    }
+
+    .section-intro p:last-child {
+      max-width: 500px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .premise-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+    }
+
+    .premise-card {
+      min-height: 330px;
+      padding: 28px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .premise-card .num { font: 12px 'Courier New', monospace; color: var(--muted); }
+    .premise-card h3 { margin: 0; font-size: 33px; font-weight: 500; letter-spacing: -.035em; }
+    .premise-card p { max-width: 360px; margin: 14px 0 0; color: var(--muted); }
+
+    .mini-diagram {
+      height: 110px;
+      position: relative;
+      margin-bottom: 24px;
+      overflow: hidden;
+      contain: layout paint;
+    }
+
+    .dot {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      top: 44px;
+      z-index: 2;
+    }
+    .dot.green { background: var(--green); }
+    .dot.red { background: var(--red); }
+
+    /* All three diagrams animate inside their own card rather than using
+       fixed pixel translations that can escape at narrower widths. */
+    .mirror-demo .green { animation: mirrorG 2.2s ease-in-out infinite alternate; }
+    .mirror-demo .red { animation: mirrorR 2.2s ease-in-out infinite alternate; }
+    @keyframes mirrorG { from { left: 12%; } to { left: 34%; } }
+    @keyframes mirrorR { from { left: 54%; } to { left: 76%; } }
+
+    .noise-demo .green { left: 16%; }
+    .noise-demo .red { animation: noise 2.1s steps(1, end) infinite; }
+    @keyframes noise {
+      0%   { left: 68%; top: 44px; }
+      20%  { left: 47%; top: 66px; }
+      40%  { left: 78%; top: 18px; }
+      60%  { left: 56%; top: 10px; }
+      80%  { left: 73%; top: 72px; }
+      100% { left: 68%; top: 44px; }
+    }
+
+    .tension-demo .green { left: 16%; }
+    .tension-demo .red { right: 16%; }
+    .connection {
+      position: absolute;
+      left: calc(16% + 11px);
+      right: calc(16% + 11px);
+      top: 54.5px;
+      height: 1px;
+      background: var(--ink);
+      z-index: 1;
+    }
+    .connection::after {
+      content: '';
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ink);
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      animation: relationMove 2.8s cubic-bezier(.52,.04,.35,1) infinite;
+    }
+    @keyframes relationMove {
+      0%, 100% { left: 18%; }
+      48% { left: 82%; }
+      64% { left: 61%; }
+    }
+
+    .atlas {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .atlas .section-head,
+    .atlas .section-intro { margin-left: var(--pad); margin-right: var(--pad); }
+
+    .path {
+      border-top: 1px solid var(--line);
+    }
+
+    .chapter-row {
+      display: grid;
+      grid-template-columns: 84px minmax(250px, .72fr) minmax(0, 1.5fr);
+      min-height: 280px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .chapter-no {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 32px;
+      border-right: 1px solid var(--line);
+      font: 12px 'Courier New', monospace;
+      color: var(--muted);
+    }
+
+    .chapter-copy {
+      padding: 30px 34px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .chapter-copy h3 {
+      margin: 0;
+      max-width: 450px;
+      font-size: clamp(30px, 3.6vw, 54px);
+      line-height: .98;
+      font-weight: 500;
+      letter-spacing: -.045em;
+    }
+
+    .chapter-copy p {
+      max-width: 440px;
+      margin: 30px 0 0;
+      color: var(--muted);
+    }
+
+    .sketch-list { display: grid; }
+    .sketch-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 250px) minmax(0, 1fr) 34px;
+      gap: 24px;
+      align-items: center;
+      min-height: 92px;
+      padding: 18px 26px;
+      border-bottom: 1px solid var(--line);
+      transition: background .2s ease;
+    }
+    .sketch-row:last-child { border-bottom: 0; }
+    .sketch-row:hover { background: #fff; }
+    .sketch-row:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: -2px;
+      background: #fff;
+    }
+    .sketch-code {
+      min-width: 0;
+      font: 12px/1.4 'Courier New', monospace;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .sketch-desc { min-width: 0; max-width: 620px; color: var(--muted); }
+    .sketch-arrow { font-size: 21px; transform: rotate(-45deg); }
+
+    .current-study {
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .current-study > .section-head,
+    .current-study > .section-intro { margin-left: var(--pad); margin-right: var(--pad); }
+
+    .study-shell {
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      min-height: 700px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .study-controls {
+      padding: 28px;
+      border-right: 1px solid var(--line);
+      background: #ebe9e3;
+    }
+
+    .control-label {
+      margin: 0 0 12px;
+      font: 11px 'Courier New', monospace;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+    }
+
+    .control-group { margin-bottom: 30px; }
+    .mode-buttons { display: grid; gap: 8px; }
+    .mode-btn {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: transparent;
+      padding: 13px 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+    .mode-btn:hover { background: rgba(255,255,255,.55); }
+    .mode-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .mode-btn span { display: block; margin-top: 3px; font-size: 12px; opacity: .62; }
+
+    .study-copy {
+      margin-top: 44px;
+      padding-top: 22px;
+      border-top: 1px solid var(--line);
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .study-copy strong { color: var(--ink); font-weight: 600; }
+
+    .study-stage {
+      position: relative;
+      overflow: hidden;
+      min-height: 700px;
+      background-color: #dddcd6;
+      background-image:
+        linear-gradient(45deg, rgba(17,17,15,.91) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(17,17,15,.91) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(17,17,15,.91) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(17,17,15,.91) 75%);
+      background-size: 96px 96px;
+      background-position: 0 0, 0 48px, 48px -48px, -48px 0;
+    }
+
+    .study-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(243,242,238,.04), rgba(243,242,238,.2));
+      pointer-events: none;
+    }
+
+    .study-human, .study-computer {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      transform: translate(-50%,-50%);
+      box-shadow: 0 0 0 7px rgba(243,242,238,.82);
+      z-index: 4;
+      transition: left .42s cubic-bezier(.22,.78,.24,1), top .42s cubic-bezier(.22,.78,.24,1);
+    }
+    .study-human { background: var(--green); left: 38%; top: 58%; }
+    .study-computer { background: var(--red); left: 58%; top: 46%; }
+
+    .study-caption {
+      position: absolute;
+      left: 24px;
+      bottom: 24px;
+      max-width: 460px;
+      background: rgba(243,242,238,.94);
+      border: 1px solid var(--ink);
+      padding: 16px 18px;
+      z-index: 7;
+      font: 13px/1.45 'Courier New', monospace;
+    }
+
+    .history-strip {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      gap: 5px;
+      z-index: 7;
+    }
+    .history-cell {
+      height: 10px;
+      flex: 1;
+      max-width: 38px;
+      background: rgba(243,242,238,.75);
+      border: 1px solid rgba(17,17,15,.5);
+    }
+    .history-cell.mimic { background: var(--green); }
+    .history-cell.deviate { background: var(--red); }
+
+    .strategy-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-left: 1px solid var(--line);
+    }
+
+    .strategy-card {
+      min-height: 330px;
+      padding: 26px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .strategy-card h3 { margin: 0; font-size: 30px; font-weight: 500; letter-spacing: -.03em; }
+    .strategy-card p { margin: 12px 0 0; color: var(--muted); }
+    .sequence {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 20px;
+    }
+    .beat {
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      border: 1px solid var(--ink);
+      background: var(--green);
+    }
+    .beat.red { background: var(--red); }
+    .beat.empty { background: transparent; }
+
+    .findings-layout {
+      display: grid;
+      grid-template-columns: .82fr 1.18fr;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+    }
+
+    .finding-thesis {
+      padding: 34px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .finding-thesis blockquote {
+      margin: 0;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(34px, 4vw, 66px);
+      line-height: 1.02;
+      letter-spacing: -.04em;
+    }
+    .finding-thesis p { max-width: 520px; margin: 40px 0 0; color: var(--muted); }
+
+    .finding-list { display: grid; }
+    .finding-item {
+      display: grid;
+      grid-template-columns: 68px minmax(0, 1fr);
+      min-height: 145px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .finding-item .n {
+      padding: 24px 18px;
+      border-right: 1px solid var(--line);
+      font: 12px 'Courier New', monospace;
+      color: var(--muted);
+    }
+    .finding-item .copy { padding: 23px 28px; }
+    .finding-item h4 { margin: 0 0 8px; font-size: 24px; font-weight: 500; letter-spacing: -.025em; }
+    .finding-item p { margin: 0; color: var(--muted); max-width: 620px; }
+
+    .open-questions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+    }
+    .question {
+      min-height: 230px;
+      padding: 30px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(27px, 3vw, 45px);
+      line-height: 1.08;
+      letter-spacing: -.025em;
+    }
+    .question sup { font: 11px 'Courier New', monospace; color: var(--muted); margin-right: 10px; }
+
+    footer {
+      min-height: 420px;
+      padding: 64px var(--pad) 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .footer-title {
+      max-width: 1200px;
+      font-size: clamp(50px, 8vw, 130px);
+      font-weight: 500;
+      line-height: .86;
+      letter-spacing: -.065em;
+    }
+    .footer-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 30px;
+      margin-top: 80px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: rgba(243,242,238,.58);
+    }
+
+    @media (max-width: 1180px) and (min-width: 981px) {
+      .sketch-row {
+        grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) 30px;
+        gap: 18px;
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-stage { min-height: 620px; border-left: 0; border-top: 1px solid var(--line); }
+      .hero-copy { min-height: auto; }
+      .section-intro { margin-left: 0; }
+      .premise-grid { grid-template-columns: 1fr; }
+      .chapter-row { grid-template-columns: 62px 1fr; }
+      .sketch-list { grid-column: 1 / -1; border-top: 1px solid var(--line); }
+      .study-shell { grid-template-columns: 1fr; }
+      .study-controls { border-right: 0; border-bottom: 1px solid var(--line); }
+      .strategy-grid { grid-template-columns: repeat(2, 1fr); }
+      .findings-layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .nav { display: none; }
+      .hero-bottom, .section-intro { grid-template-columns: 1fr; }
+      .section-head { grid-template-columns: 1fr; gap: 18px; }
+      .section-intro { gap: 20px; }
+      .chapter-row { grid-template-columns: 48px 1fr; }
+      .chapter-copy { padding: 24px 20px; }
+      .sketch-row { grid-template-columns: 1fr 24px; }
+      .sketch-code { grid-column: 1 / -1; }
+      .strategy-grid, .open-questions { grid-template-columns: 1fr; }
+      .footer-meta { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="#top">Counterpoint</a>
+      <nav class="nav" aria-label="Primary navigation">
+        <a href="#premise">Premise</a>
+        <a href="#atlas">Studies</a>
+        <a href="#current">Current study</a>
+        <a href="#findings">Findings</a>
+      </nav>
+    </header>
+
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <div>
+          <p class="eyebrow">Ongoing artistic research · movement · computation · relation</p>
+          <h1>Counterpoint <em>Studies in Human–Computer Movement and Response</em></h1>
+        </div>
+        <div class="hero-bottom">
+          <p class="hero-thesis">How can a computer respond to human movement without becoming either a mirror or noise?</p>
+          <p class="hero-note">A growing series of sketches investigates rhythm, sensing, spatial translation, memory, prediction, imitation, deviation, and computational independence.</p>
+        </div>
+      </div>
+
+      <div class="hero-stage" id="heroStage" aria-label="Interactive human and computer movement field">
+        <div class="stage-wash"></div>
+        <div class="mover human" id="heroHuman"></div>
+        <div class="mover computer" id="heroComputer"></div>
+        <div class="hero-label label-human">Human / input</div>
+        <div class="hero-label label-computer">Computer / response</div>
+        <div class="stage-instruction">Move across the field. The computer follows, remembers, and occasionally departs.</div>
+      </div>
+    </section>
+
+    <section class="section" id="premise">
+      <div class="section-head">
+        <div class="section-index">01 / Premise</div>
+        <h2 class="section-title">Two movements can be connected without becoming the same.</h2>
+      </div>
+
+      <div class="section-intro">
+        <p class="lead">In music, counterpoint brings independent melodic lines into relation. Here, the lines are movements: one made by a human body, the other by a computational system.</p>
+        <p>The research asks how relation becomes perceptible. A response must contain enough continuity to feel connected, but enough difference to suggest another agency. Too much imitation becomes a mirror. Too much variation becomes noise.</p>
+      </div>
+
+      <div class="premise-grid">
+        <article class="premise-card">
+          <span class="num">01 — MIRROR</span>
+          <div class="mini-diagram mirror-demo">
+            <span class="dot green"></span><span class="dot red"></span>
+          </div>
+          <div>
+            <h3>Perfect imitation</h3>
+            <p>The relationship is legible immediately, but the computer soon becomes predictable and loses its sense of independence.</p>
+          </div>
+        </article>
+        <article class="premise-card">
+          <span class="num">02 — NOISE</span>
+          <div class="mini-diagram noise-demo">
+            <span class="dot green"></span><span class="dot red"></span>
+          </div>
+          <div>
+            <h3>Pure variation</h3>
+            <p>The computer remains unpredictable, but its actions no longer appear to be responses to the person.</p>
+          </div>
+        </article>
+        <article class="premise-card">
+          <span class="num">03 — COUNTERPOINT</span>
+          <div class="mini-diagram tension-demo">
+            <span class="dot green"></span><span class="dot red"></span><span class="connection"></span>
+          </div>
+          <div>
+            <h3>Dynamic tension</h3>
+            <p>The system establishes a pattern, remembers it, and departs at moments when difference can be perceived as meaningful.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section atlas" id="atlas">
+      <div class="section-head">
+        <div class="section-index">02 / Research atlas</div>
+        <h2 class="section-title">The sandbox is a sequence of questions, not a collection of isolated demos.</h2>
+      </div>
+      <div class="section-intro">
+        <p class="lead">Each sketch isolates one property of interaction: internal rhythm, change, steps, spatial relation, language, memory, or surprise.</p>
+        <p>Together they trace a gradual shift—from giving the computer a rhythm of its own, to placing a human and a computational partner inside the same behavioural composition. Select any study to open the original sketch in a new tab.</p>
+      </div>
+
+      <div class="path">
+        <article class="chapter-row">
+          <div class="chapter-no">01</div>
+          <div class="chapter-copy">
+            <h3>A computer with a sense of time</h3>
+            <p>Before responding to a person, the system needs duration, rhythm, and the capacity to change state.</p>
+          </div>
+          <div class="sketch-list">
+            <a class="sketch-row" href="./sandbox/breathe/" target="_blank" rel="noopener noreferrer" aria-label="Open breathe sketch in a new tab"><div class="sketch-code">breathe</div><div class="sketch-desc">A minimal autonomous pulse: a square brightens and fades as if following an internal breath.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+            <a class="sketch-row" href="./sandbox/change/" target="_blank" rel="noopener noreferrer" aria-label="Open change sketch in a new tab"><div class="sketch-code">change</div><div class="sketch-desc">The system compares recent and past movement, responding to acceleration and shifts rather than position alone.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+            <a class="sketch-row" href="./sandbox/approach/" target="_blank" rel="noopener noreferrer" aria-label="Open approach sketch in a new tab"><div class="sketch-code">approach</div><div class="sketch-desc">Approach, retreat, stillness, and reversal become distinct behavioural events; following is occasionally interrupted.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+          </div>
+        </article>
+
+        <article class="chapter-row">
+          <div class="chapter-no">02</div>
+          <div class="chapter-copy">
+            <h3>Movement becomes a score</h3>
+            <p>Continuous motion is reduced to steps, rests, timing, preparation, and the internal articulation of a body.</p>
+          </div>
+          <div class="sketch-list">
+            <a class="sketch-row" href="./sandbox/steps/" target="_blank" rel="noopener noreferrer" aria-label="Open steps sketch in a new tab"><div class="sketch-code">steps</div><div class="sketch-desc">Two movers perform binary sequences of step and rest on a shared temporal grid.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+            <a class="sketch-row" href="./sandbox/steps-with-easing/" target="_blank" rel="noopener noreferrer" aria-label="Open steps-with-easing sketch in a new tab"><div class="sketch-code">steps-with-easing</div><div class="sketch-desc">Movements can begin at different moments while arriving on the same beat.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+            <a class="sketch-row" href="./sandbox/steps-with-easing-two-legs/" target="_blank" rel="noopener noreferrer" aria-label="Open steps-with-easing-two-legs sketch in a new tab"><div class="sketch-code">steps-with-easing-two-legs</div><div class="sketch-desc">An abstract mover is divided into two feet, exposing the bodily process inside a single displacement.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+          </div>
+        </article>
+
+        <article class="chapter-row">
+          <div class="chapter-no">03</div>
+          <div class="chapter-copy">
+            <h3>Physical space becomes computational space</h3>
+            <p>Tracked bodies are translated from unstable continuous coordinates into stable, legible grid movements.</p>
+          </div>
+          <div class="sketch-list">
+            <a class="sketch-row" href="./sandbox/grid_pozyx/" target="_blank" rel="noopener noreferrer" aria-label="Open grid_pozyx sketch in a new tab"><div class="sketch-code">grid_pozyx</div><div class="sketch-desc">Pozyx position and acceleration data are calibrated, filtered, and quantized into a 7 × 10 field.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+          </div>
+        </article>
+
+        <article class="chapter-row">
+          <div class="chapter-no">04</div>
+          <div class="chapter-copy">
+            <h3>Relations become perceptible</h3>
+            <p>The interval between bodies is treated as material in its own right—not merely as a property of either participant.</p>
+          </div>
+          <div class="sketch-list">
+            <a class="sketch-row" href="./sandbox/grid_pozyx_intervals/" target="_blank" rel="noopener noreferrer" aria-label="Open grid_pozyx_intervals sketch in a new tab"><div class="sketch-code">grid_pozyx_intervals</div><div class="sketch-desc">Distance between participants is mapped to frequency ratios and heard as musical interval.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+            <a class="sketch-row" href="./sandbox/grid_pozyx_notes/" target="_blank" rel="noopener noreferrer" aria-label="Open grid_pozyx_notes sketch in a new tab"><div class="sketch-code">grid_pozyx_notes</div><div class="sketch-desc">Each pair of bodies acquires its own sustained sonic voice; previous relations leave fading traces.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+            <a class="sketch-row" href="./sandbox/grid_pozyx_rhythms/" target="_blank" rel="noopener noreferrer" aria-label="Open grid_pozyx_rhythms sketch in a new tab"><div class="sketch-code">grid_pozyx_rhythms</div><div class="sketch-desc">Spatial distance is translated into temporal distance, changing the pace of a shared rhythm.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+            <a class="sketch-row" href="./sandbox/grid_pozyx_words/" target="_blank" rel="noopener noreferrer" aria-label="Open grid_pozyx_words sketch in a new tab"><div class="sketch-code">grid_pozyx_words</div><div class="sketch-desc">Position and sustained stillness trigger spoken words; dwelling becomes an expressive action.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+          </div>
+        </article>
+
+        <article class="chapter-row">
+          <div class="chapter-no">05</div>
+          <div class="chapter-copy">
+            <h3>The computer becomes a movement partner</h3>
+            <p>A human and a computational mover now share one grid. The problem shifts from mapping movement to composing response.</p>
+          </div>
+          <div class="sketch-list">
+            <a class="sketch-row" href="./sandbox/grid_pozyx_one_tag_interaction/" target="_blank" rel="noopener noreferrer" aria-label="Open grid_pozyx_one_tag_interaction sketch in a new tab"><div class="sketch-code">grid_pozyx_one_tag_interaction</div><div class="sketch-desc">The computer mimics, diverges, approaches, retreats, remembers recent interaction, and reorganizes its behaviour over time.</div><div class="sketch-arrow" aria-hidden="true">→</div></a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section current-study" id="current">
+      <div class="section-head">
+        <div class="section-index">03 / Current study</div>
+        <h2 class="section-title">A response is not only an action. It is an action placed inside a history.</h2>
+      </div>
+      <div class="section-intro">
+        <p class="lead">The current sketch tests how a computer can alternate between legibility and independence.</p>
+        <p>Its vocabulary is deliberately small—mimic, diverge, move closer, move further—but these actions are organised through different temporal strategies. Click the modes below to compare their behavioural character.</p>
+      </div>
+
+      <div class="study-shell">
+        <aside class="study-controls">
+          <div class="control-group">
+            <p class="control-label">Response strategy</p>
+            <div class="mode-buttons">
+              <button class="mode-btn active" data-mode="static">Static<span>One stable rule</span></button>
+              <button class="mode-btn" data-mode="streak">Streak<span>Establish, then break</span></button>
+              <button class="mode-btn" data-mode="elastic">Elastic<span>Regulate recent similarity</span></button>
+              <button class="mode-btn" data-mode="phrase">Phrase<span>Organise behaviour as a sentence</span></button>
+            </div>
+          </div>
+          <div class="control-group">
+            <p class="control-label">Temporal relation</p>
+            <div class="mode-buttons">
+              <button class="mode-btn active timing-btn" data-timing="turn">Turn-taking<span>Human, then computer</span></button>
+              <button class="mode-btn timing-btn" data-timing="simultaneous">Simultaneous<span>Both begin together</span></button>
+            </div>
+          </div>
+          <p class="study-copy"><strong>Green</strong> is a human movement sequence. <strong>Red</strong> is the computer response. The strip above records recent imitation and deviation.</p>
+        </aside>
+
+        <div class="study-stage" id="studyStage">
+          <div class="study-overlay"></div>
+          <div class="history-strip" id="historyStrip"></div>
+          <div class="study-human" id="studyHuman"></div>
+          <div class="study-computer" id="studyComputer"></div>
+          <div class="study-caption" id="studyCaption">STATIC — The computer repeats the human direction. The relation is clear, but quickly becomes fully predictable.</div>
+        </div>
+      </div>
+
+      <div class="strategy-grid">
+        <article class="strategy-card">
+          <div class="sequence"><span class="beat"></span><span class="beat"></span><span class="beat"></span><span class="beat"></span><span class="beat"></span></div>
+          <div><h3>Static</h3><p>A consistent rule makes the relation immediately readable. Repetition gradually removes surprise.</p></div>
+        </article>
+        <article class="strategy-card">
+          <div class="sequence"><span class="beat"></span><span class="beat"></span><span class="beat"></span><span class="beat"></span><span class="beat red"></span></div>
+          <div><h3>Streak</h3><p>A pattern is allowed to accumulate before one departure gives the sequence a perceptible event.</p></div>
+        </article>
+        <article class="strategy-card">
+          <div class="sequence"><span class="beat"></span><span class="beat"></span><span class="beat red"></span><span class="beat"></span><span class="beat red"></span><span class="beat"></span></div>
+          <div><h3>Elastic</h3><p>The system remembers a recent window and pushes away from excessive similarity or excessive difference.</p></div>
+        </article>
+        <article class="strategy-card">
+          <div class="sequence"><span class="beat"></span><span class="beat red"></span><span class="beat"></span><span class="beat"></span><span class="beat red"></span></div>
+          <div><h3>Phrase</h3><p>Imitation and deviation form short behavioural sentences with repetition, emphasis, and closure.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="findings">
+      <div class="section-head">
+        <div class="section-index">04 / What is emerging</div>
+        <h2 class="section-title">The project is beginning to treat predictability as an artistic material.</h2>
+      </div>
+
+      <div class="findings-layout">
+        <div class="finding-thesis">
+          <blockquote>Agency may not appear when a system is unpredictable. It may appear when a system is understandable, yet not completely knowable.</blockquote>
+          <p>This is a working proposition rather than a conclusion. The current experiments examine how expectation is built, how it decays, and when a change is experienced as meaningful rather than arbitrary.</p>
+        </div>
+        <div class="finding-list">
+          <article class="finding-item"><div class="n">01</div><div class="copy"><h4>Randomness does not automatically create independence.</h4><p>Without a perceivable relation, unpredictable movement is often read as malfunction, indifference, or noise.</p></div></article>
+          <article class="finding-item"><div class="n">02</div><div class="copy"><h4>Imitation creates connection quickly.</h4><p>It provides a clear behavioural link, but becomes less compelling as soon as the rule is learned.</p></div></article>
+          <article class="finding-item"><div class="n">03</div><div class="copy"><h4>Deviation gains meaning from what precedes it.</h4><p>A broken pattern can feel eventful only after enough consistency has produced an expectation.</p></div></article>
+          <article class="finding-item"><div class="n">04</div><div class="copy"><h4>Timing changes the perceived relationship.</h4><p>The same movement can read as answer, accompaniment, pursuit, refusal, or autonomous initiative depending on when it begins.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="section-index">05 / Open questions</div>
+        <h2 class="section-title">The next studies move from programming patterns to sensing when a pattern has become known.</h2>
+      </div>
+      <div class="open-questions">
+        <div class="question"><sup>01</sup>How can the system recognise that a participant has learned its behaviour?</div>
+        <div class="question"><sup>02</sup>What distinguishes surprise from confusion or loss of control?</div>
+        <div class="question"><sup>03</sup>Can a movement partner develop a different character with each person?</div>
+        <div class="question"><sup>04</sup>How long can a relation remain legible without becoming fixed?</div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-title">Neither mirror<br>nor noise.</div>
+      <div class="footer-meta">
+        <span>Counterpoint — ongoing research</span>
+        <span>Human movement / computational response / 2026</span>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    // Hero: a responsive human point and a delayed, occasionally divergent computer point.
+    const heroStage = document.getElementById('heroStage');
+    const heroHuman = document.getElementById('heroHuman');
+    const heroComputer = document.getElementById('heroComputer');
+    let heroTarget = { x: .31, y: .63 };
+    let comp = { x: .66, y: .39 };
+    let memory = [];
+    let lastTrace = 0;
+
+    function addTrace(x, y, type) {
+      const t = document.createElement('span');
+      t.className = 'trace';
+      t.style.left = (x * 100) + '%';
+      t.style.top = (y * 100) + '%';
+      t.style.background = type === 'human' ? 'var(--green)' : 'var(--red)';
+      heroStage.appendChild(t);
+      setTimeout(() => { t.style.transition = 'opacity 1.2s'; t.style.opacity = '0'; }, 600);
+      setTimeout(() => t.remove(), 1900);
+    }
+
+    heroStage.addEventListener('pointermove', (e) => {
+      const r = heroStage.getBoundingClientRect();
+      heroTarget.x = Math.max(.04, Math.min(.96, (e.clientX - r.left) / r.width));
+      heroTarget.y = Math.max(.04, Math.min(.96, (e.clientY - r.top) / r.height));
+      heroHuman.style.left = (heroTarget.x * 100) + '%';
+      heroHuman.style.top = (heroTarget.y * 100) + '%';
+      const now = performance.now();
+      if (now - lastTrace > 75) { addTrace(heroTarget.x, heroTarget.y, 'human'); lastTrace = now; }
+    });
+
+    setInterval(() => {
+      memory.push({ ...heroTarget });
+      if (memory.length > 8) memory.shift();
+      const source = memory[0] || heroTarget;
+      const deviation = Math.random() < .18;
+      const dx = deviation ? (Math.random() - .5) * .32 : 0;
+      const dy = deviation ? (Math.random() - .5) * .32 : 0;
+      comp.x = Math.max(.05, Math.min(.95, source.x + dx));
+      comp.y = Math.max(.05, Math.min(.95, source.y + dy));
+      heroComputer.style.left = (comp.x * 100) + '%';
+      heroComputer.style.top = (comp.y * 100) + '%';
+      addTrace(comp.x, comp.y, 'computer');
+    }, 520);
+
+    // Current study: deterministic human sequence, variable response strategy.
+    const humanEl = document.getElementById('studyHuman');
+    const compEl = document.getElementById('studyComputer');
+    const captionEl = document.getElementById('studyCaption');
+    const historyEl = document.getElementById('historyStrip');
+    const modeBtns = [...document.querySelectorAll('.mode-btn[data-mode]')];
+    const timingBtns = [...document.querySelectorAll('.timing-btn')];
+
+    const humanPath = [
+      [.30,.62], [.38,.62], [.46,.54], [.54,.54], [.54,.46], [.46,.38],
+      [.38,.46], [.30,.46], [.38,.54], [.46,.62], [.54,.62], [.62,.54]
+    ];
+    let mode = 'static';
+    let timing = 'turn';
+    let step = 0;
+    let compPos = [.58,.46];
+    let history = [];
+    let phraseIndex = 0;
+    const phrasePattern = [true,false,true,true,false,true,true,true,false];
+
+    const captions = {
+      static: 'STATIC — The computer repeats the human direction. The relation is clear, but quickly becomes fully predictable.',
+      streak: 'STREAK — The computer establishes a run of imitation, then breaks it once the pattern has accumulated enough weight.',
+      elastic: 'ELASTIC — A short memory window regulates the balance between similarity and difference.',
+      phrase: 'PHRASE — Imitation and departure are organised as a recurring behavioural sentence.'
+    };
+
+    function renderHistory() {
+      historyEl.innerHTML = '';
+      history.slice(-12).forEach(v => {
+        const c = document.createElement('span');
+        c.className = 'history-cell ' + (v ? 'mimic' : 'deviate');
+        historyEl.appendChild(c);
+      });
+    }
+
+    function clamp(v) { return Math.max(.10, Math.min(.90, v)); }
+
+    function chooseMimic() {
+      if (mode === 'static') return true;
+      if (mode === 'streak') return (step % 7) !== 6;
+      if (mode === 'phrase') {
+        const out = phrasePattern[phraseIndex % phrasePattern.length];
+        phraseIndex++;
+        return out;
+      }
+      // elastic: similarity above 70% produces a strong push toward deviation.
+      const recent = history.slice(-8);
+      const ratio = recent.length ? recent.filter(Boolean).length / recent.length : .5;
+      return Math.random() > Math.max(.12, (ratio - .55) * 1.65);
+    }
+
+    function advanceStudy() {
+      const prev = humanPath[step % humanPath.length];
+      const next = humanPath[(step + 1) % humanPath.length];
+      const dx = next[0] - prev[0];
+      const dy = next[1] - prev[1];
+      const mimic = chooseMimic();
+      const moveComputer = () => {
+        let cdx = dx, cdy = dy;
+        if (!mimic) {
+          if (Math.abs(dx) > Math.abs(dy)) { cdx = 0; cdy = dx > 0 ? -.08 : .08; }
+          else { cdy = 0; cdx = dy > 0 ? -.08 : .08; }
+        }
+        compPos = [clamp(compPos[0] + cdx), clamp(compPos[1] + cdy)];
+        compEl.style.left = (compPos[0] * 100) + '%';
+        compEl.style.top = (compPos[1] * 100) + '%';
+        history.push(mimic);
+        if (history.length > 16) history.shift();
+        renderHistory();
+      };
+
+      humanEl.style.left = (next[0] * 100) + '%';
+      humanEl.style.top = (next[1] * 100) + '%';
+      if (timing === 'simultaneous') moveComputer();
+      else setTimeout(moveComputer, 320);
+      step++;
+    }
+
+    modeBtns.forEach(btn => btn.addEventListener('click', () => {
+      modeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      history = [];
+      phraseIndex = 0;
+      captionEl.textContent = captions[mode];
+      renderHistory();
+    }));
+
+    timingBtns.forEach(btn => btn.addEventListener('click', () => {
+      timingBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      timing = btn.dataset.timing;
+    }));
+
+    setInterval(advanceStudy, 850);
+    renderHistory();
+  </script>
+</body>
+</html>
