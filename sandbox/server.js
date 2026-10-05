@@ -106,7 +106,33 @@ io.on('connection', function (socket) {
 
   });
 
+  // Handle Vive data from TD plugin
+  // Note: this will be thrown away, when we move to python server, as we will decicde the output format.
+  socket.on("vive", ({channels} = {}) => {
+    if (!channels) return;
+
+    const data = { ts: Date.now() / 1000, trackers: parseTrackers(channels) };
+    io.emit("trackers", data);
+  })
 });
+
+// TD channel name -> unified field name. Anything not listed keeps its name.
+const VIVE_FIELDS = { tx: 'x', ty: 'y', tz: 'z' };
+
+// Group flat "id:channel" keys into one object per tracker
+function parseTrackers(channels) {
+  let trackers = {};
+  for (const [key, value] of Object.entries(channels)) {
+    const [id, channel] = key.split(":");
+
+    if (!(id in trackers)) {
+      trackers[id] = { id: id };
+    }
+
+    trackers[id][VIVE_FIELDS[channel] || channel] = value;
+  }
+  return Object.values(trackers);
+}
 
 function sendData(record, r, pts) {
   console.log('record', r, record.length);
