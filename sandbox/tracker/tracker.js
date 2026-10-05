@@ -1,35 +1,34 @@
-import { io } from '/socket.io/socket.io.esm.min.js';
+export class Tracker {
 
-export class TrackerStore {
-
-  constructor(transformer, port = 8001) {
-    this.transformer = transformer;
-    this.trackers = {};
-
-    this.socket = io(location.protocol + '//' + location.hostname + ':' + port);
-    this.socket.on('connect', () => {
-      console.log("Tracker connected: ", this.socket.id);
-    });
-    this.socket.on('trackers', (message) => this.update(message));
+  constructor(id, historySize = 180) {
+    this.id = id;
+    this.historySize = historySize;
+    this.history = [];
   }
 
-  update(message) {
-    for (const raw of message.trackers) {
-      let pos = this.transformer(raw);
-      let prev = this.trackers[raw.id];
+  get current() {
+    return this.history[this.history.length - 1] || null;
+  }
 
-      this.trackers[raw.id] = {
-        x: pos.x,
-        y: pos.y,
-        z: pos.z,
-        px: prev ? prev.x : pos.x,
-        py: prev ? prev.y : pos.y,
-        pz: prev ? prev.z : pos.z,
-      };
+  get previous() {
+    return this.history[this.history.length - 2] || this.current;
+  }
+
+  // TODO: handle lost trackers. Record the arrival time here and add isStale(), so a tracker that stops
+  // updating is flagged and kept, not frozen forever. Clear the history when it returns after a gap.
+  update(pos, raw, ts) {
+    this.history.push({ x: pos.x, y: pos.y, z: pos.z, ts: ts, raw: raw });
+    
+    if (this.history.length > this.historySize) {
+        this.history.shift();
     }
   }
 
-  getTrackers() {
-    return this.trackers;
+  clear() {
+    this.history = [];
+  }
+
+  getPosition() {
+    return this.current;
   }
 }
