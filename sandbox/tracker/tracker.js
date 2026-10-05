@@ -1,4 +1,6 @@
-class TrackerStore {
+import { io } from '/socket.io/socket.io.esm.min.js';
+
+export class TrackerStore {
 
   constructor(transformer, port = 8001) {
     this.transformer = transformer;
