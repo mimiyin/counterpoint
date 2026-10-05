@@ -68,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=PORT)
     args = parser.parse_args()
     tracker = ask_tracker()
+    # TODO: set up the headsetless config if open vr tracker is selected
     app['source'] = TRACKERS[tracker]()
     print('Reading trackers from', tracker)
 
