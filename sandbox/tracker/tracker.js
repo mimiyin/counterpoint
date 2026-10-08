@@ -1,9 +1,13 @@
+// A tracker that has not updated for this milliseconds as lost
+const STALE_AFTER = 500;
+
 export class Tracker {
 
   constructor(id, historySize = 180) {
     this.id = id;
     this.historySize = historySize;
     this.history = [];
+    this.lastSeen = null;
   }
 
   get current() {
@@ -14,11 +18,18 @@ export class Tracker {
     return this.history[this.history.length - 2] || this.current;
   }
 
-  // TODO: handle lost trackers. Record the arrival time here and add isStale(), so a tracker that stops
-  // updating is flagged and kept, not frozen forever. Clear the history when it returns after a gap.
+  isStale() {
+    return this.lastSeen === null || performance.now() - this.lastSeen > STALE_AFTER;
+  }
+
   update(pos, raw, ts) {
+    if (this.isStale()) {
+      this.clear();
+    }
+
+    this.lastSeen = performance.now();
     this.history.push({ x: pos.x, y: pos.y, z: pos.z, ts: ts, raw: raw });
-    
+
     if (this.history.length > this.historySize) {
         this.history.shift();
     }
