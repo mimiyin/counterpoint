@@ -45,18 +45,8 @@ export class TrackerStore {
   setTransformer(transformer) {
     this.transformer = transformer;
 
-    // Replay every stored raw reading through the new transformer
     for (const id in this.trackers) {
-      const tracker = this.trackers[id];
-      const samples = tracker.history;
-
-      tracker.clear();
-      for (const sample of samples) {
-        const pos = this.transform(sample.raw);
-        if (!pos) continue;
-
-        tracker.update(pos, sample.raw, sample.ts);
-      }
+      this.trackers[id].clear();
     }
   }
 
