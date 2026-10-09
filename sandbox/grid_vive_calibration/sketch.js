@@ -125,7 +125,7 @@ function roundPos(pos) {
 }
 
 function getTracker() {
-  return store.getTrackers()['fake1'];
+  return Object.values(store.getTrackers())[0];
 }
 
 function goTo(step) {
