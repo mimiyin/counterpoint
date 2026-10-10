@@ -51,3 +51,15 @@ export function createRoomTransformer(origin, xPoint, zPoint, xDistance = 1, zDi
     };
   };
 }
+
+export function createRoomTransformerFromConfig(config) {
+  return createRoomTransformer(
+    config.origin,
+    config.xPoint,
+    config.zPoint,
+    config.xDistance,
+    config.zDistance,
+    config.xOffset,
+    config.zOffset
+  );
+}
