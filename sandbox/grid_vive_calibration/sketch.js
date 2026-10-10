@@ -1,48 +1,56 @@
-import { TrackerStore, connectFake, fakeRoomTracker, identityTransformer, createRoomTransformer } from '../tracker/index.js';
+import { TrackerStore, connectSocket, connectFake, fakeRoomTracker, identityTransformer, createRoomTransformer } from '../tracker/index.js';
 
 const COLS = 7;
 const ROWS = 10;
 const DIAM = 100;
-let w, h;
+let w, h; // cell dimensions
+let steps; // calibration steps
 
 const SAMPLES = 60;
-const CAPTURE_MS = 1500; 
+const CAPTURE_MS = 1500;
 
-const STEPS = {
-  origin: {
-    prompt: 'Place the tracker on the top left corner, then press ENTER',
-    target: () => ({ x: 0, y: 0 }),
-    next: 'xPoint',
-  },
-  xPoint: {
-    prompt: 'Place the tracker on the top right corner, then press ENTER',
-    target: () => ({ x: windowWidth, y: 0 }),
-    next: 'zPoint',
-  },
-  zPoint: {
-    prompt: 'Place the tracker on the bottom left corner, then press ENTER',
-    target: () => ({ x: 0, y: windowHeight }),
-    next: 'check',
-  },
-  check: {
-    prompt: 'Place the tracker on the bottom right corner, then press ENTER',
-    target: () => ({ x: windowWidth, y: windowHeight }),
-    next: 'free',
-  },
-  free: {
-    prompt: null,
-    target: null,
-    next: null,
-  },
-};
-
+// How far the fourth corner may land from its target on each axis and still pass, as a fraction of a cell
+const CHECK_TOLERANCE = 0.1;
 
 const state = {
   step: 'origin',
-  phase: 'waiting', // waiting， collecting， failed， done
+  phase: 'waiting', // waiting, collecting, failed
   startedAt: 0,     // millis() when ENTER was pressed
   captures: {},     // averaged raw reading per step: origin, xPoint, zPoint
   message: '',
+  config: null,     // everything the room transformer is built from, set once zPoint is captured
+};
+
+const generateSteps = (w_offset = 0, h_offset = 0) => {
+  return {
+    origin: {
+      prompt: 'Place the tracker on the top left corner, then press ENTER',
+      target: { x: w_offset, y: h_offset },
+      next: 'xPoint',
+    },
+    xPoint: {
+      prompt: 'Place the tracker on the top right corner, then press ENTER',
+      target: { x: width - w_offset, y: h_offset },
+      next: 'zPoint',
+    },
+    zPoint: {
+      prompt: 'Place the tracker on the bottom left corner, then press ENTER',
+      target: { x: w_offset, y: height - h_offset },
+      next: 'check',
+      onCaptured: applyCalibration,
+    },
+    check: {
+      prompt: 'Place the tracker on the bottom right corner, then press ENTER',
+      target: { x: width - w_offset, y: height - h_offset },
+      next: 'free',
+      onCaptured: checkCalibration,
+    },
+    free: {
+      prompt: null,
+      target: null,
+      next: null,
+    },
+  };
 };
 
 const store = new TrackerStore(identityTransformer);
@@ -51,14 +59,15 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   w = width / COLS;
   h = height / ROWS;
+  steps = generateSteps(w, h);
 
   connectFake(store, fakeRoomTracker(fakeTrackerPos));
+  // connectSocket(store);
 }
 
 // Generate a fake tracker position based on the current step
 function fakeTrackerPos() {
-  const step = STEPS[state.step];
-  if (step.target) return step.target();
+  if (isCalibrating()) return steps[state.step].target;
 
   const t = millis() / 1000;
   return {
@@ -73,59 +82,111 @@ function draw() {
 }
 
 function update() {
-  if (state.phase != 'collecting') {
-    return;
-  }
-
-  if (millis() - state.startedAt >= CAPTURE_MS) {
+  if (state.phase == 'collecting' && millis() - state.startedAt >= CAPTURE_MS) {
     finishCapture();
   }
 }
 
 function finishCapture() {
   const tracker = getTracker();
-  const pos = tracker && !tracker.isStale() ? tracker.getPosByAvg(SAMPLES, true, true) : null;
+  const pos = tracker ? tracker.getPosByAvg(SAMPLES, true, true) : null;
 
   if (!pos) {
-    state.phase = 'failed';
-    state.message = 'No tracker data.';
+    fail('No tracker data.');
     return;
   }
-
-  // TODO: Validate the capture
-  // maybe check deviation and range?
 
   console.log(state.step, { ...pos, samples: SAMPLES });
   state.captures[state.step] = { x: pos.x, y: pos.y, z: pos.z };
 
-  if (state.step == 'zPoint') {
-    const { origin, xPoint, zPoint } = state.captures;
-    store.setTransformer(createRoomTransformer(origin, xPoint, zPoint, width, height));
+  const step = steps[state.step];
+  const problem = step.onCaptured ? step.onCaptured(pos) : null;
+  if (problem) {
+    fail(problem);
+    return;
   }
 
-  const next = STEPS[state.step].next;
-  if (next) {
-    goTo(next);
-  }
-
-  if (state.step == 'free') {
-    const { origin, xPoint, zPoint } = state.captures;
-    console.log('Calibration config', {
-      origin: roundPos(origin),
-      xPoint: roundPos(xPoint),
-      zPoint: roundPos(zPoint),
-      xDistance: width,
-      zDistance: height,
-    });
+  if (step.next) {
+    goTo(step.next);
   }
 }
 
-function roundPos(pos) {
-  return { x: +pos.x.toFixed(2), y: +pos.y.toFixed(2), z: +pos.z.toFixed(2) };
+// All three points are captured: positions from the store become canvas pixels from here on
+function applyCalibration() {
+  const c = buildConfig();
+
+  // createRoomTransformer throws if the three points cannot define a room, e.g. when they are on one line
+  try {
+    store.setTransformer(
+      createRoomTransformer(c.origin, c.xPoint, c.zPoint, c.xDistance, c.zDistance, c.xOffset, c.zOffset)
+    );
+  } catch (error) {
+    console.error(error);
+    return error.message;
+  }
+
+  state.config = c;
+  return null;
+}
+
+// Compares where the calibration puts the fourth corner with where its target is.
+function checkCalibration(pos) {
+  const target = steps.check.target;
+  const landed = store.transform(pos);
+  if (!landed) return 'The calibration could not place the fourth corner.';
+
+  // How far off the fourth corner landed on each axis, in canvas pixels
+  const dx = landed.x - target.x;
+  const dz = landed.z - target.y;
+  const limitX = w * CHECK_TOLERANCE;
+  const limitZ = h * CHECK_TOLERANCE;
+  const ok = Math.abs(dx) <= limitX && Math.abs(dz) <= limitZ;
+
+  console.log('Calibration check', {
+    target: target,
+    landed: { x: landed.x, z: landed.z },
+    error: { x: dx, z: dz },
+    limit: { x: limitX, z: limitZ },
+    ok: ok,
+  });
+
+  if (!ok) {
+    return 'Calibration check failed: off by x ' + dx.toFixed(1) + ' px, z ' + dz.toFixed(1) + ' px'
+      + ' (limit ' + limitX.toFixed(1) + ', ' + limitZ.toFixed(1) + ')';
+  }
+
+  console.log('Calibration config', state.config);
+  return null;
+}
+
+function buildConfig() {
+  const origin = steps.origin.target;
+  const xPoint = steps.xPoint.target;
+  const zPoint = steps.zPoint.target;
+
+  return {
+    origin: state.captures.origin,
+    xPoint: state.captures.xPoint,
+    zPoint: state.captures.zPoint,
+    xDistance: xPoint.x - origin.x,
+    zDistance: zPoint.y - origin.y,
+    xOffset: origin.x,
+    zOffset: origin.y,
+  };
 }
 
 function getTracker() {
-  return Object.values(store.getTrackers())[0];
+  const tracker = Object.values(store.getTrackers())[0];
+  return tracker && !tracker.isStale() ? tracker : null;
+}
+
+function isCalibrating() {
+  return steps[state.step].target != null;
+}
+
+function fail(message) {
+  state.phase = 'failed';
+  state.message = message;
 }
 
 function goTo(step) {
@@ -140,9 +201,15 @@ function render() {
 
   display_grid();
 
-  const step = STEPS[state.step];
-  if (step.target) {
-    display_target(step.target());
+  if (isCalibrating()) {
+    const target = steps[state.step].target;
+
+    if (state.step == 'check') {
+      display_circle(target, 'green');
+      display_current();
+    } else {
+      display_target(target);
+    }
     display_prompt(promptText());
   } else {
     display_tracker();
@@ -167,21 +234,20 @@ function display_grid() {
 
 function display_tracker() {
   const tracker = getTracker();
-  if (!tracker || !tracker.current || tracker.isStale()) return;
+  if (!tracker) return;
+
+  const pos = tracker.getPosByAvg(15);
+  if (!pos) return;
+
+  const cell = getCell(pos.x, pos.z);
 
   push();
-  fill('red');
   noStroke();
-
-  const pos = tracker.getPosByAvg(15, false, false);
-  if (pos) {
-    const cell = getCell(pos.x, pos.z);
-    fill('red');
-    rect(cell.x, cell.y, w, h);
-    stroke(255);
-    noFill();
-    ellipse(pos.x, pos.z, DIAM);
-  }
+  fill('red');
+  rect(cell.x, cell.y, w, h);
+  stroke(255);
+  noFill();
+  ellipse(pos.x, pos.z, DIAM);
   pop();
 }
 
@@ -194,13 +260,11 @@ function getCell(x, y) {
 function promptText() {
   switch (state.phase) {
     case 'waiting':
-      return STEPS[state.step].prompt;
+      return steps[state.step].prompt;
     case 'collecting':
       return 'Capturing ' + captureProgress() + '%\nKeep the tracker still';
     case 'failed':
       return state.message + '\nPress ENTER to try again';
-    case 'done':
-      return state.message;
   }
 }
 
@@ -208,17 +272,27 @@ function captureProgress() {
   return Math.min(100, Math.round((millis() - state.startedAt) / CAPTURE_MS * 100));
 }
 
-// Where the tracker should be placed. The colour follows the phase.
 function display_target(target) {
-  const colors = { waiting: 'grey', collecting: 'orange', failed: 'red', done: 'green' };
+  const colors = { waiting: 'grey', collecting: 'orange', failed: 'red' };
 
-  const c = color(colors[state.phase]);
+  display_circle(target, colors[state.phase]);
+}
+
+function display_current() {
+  const tracker = getTracker();
+  if (!tracker || !tracker.current) return;
+
+  display_circle({ x: tracker.current.x, y: tracker.current.z }, 'red');
+}
+
+function display_circle(pos, name) {
+  const c = color(name);
   c.setAlpha(128);
 
   push();
   fill(c);
   noStroke();
-  circle(target.x, target.y, DIAM / 2);
+  circle(pos.x, pos.y, DIAM / 2);
   pop();
 }
 
@@ -238,7 +312,7 @@ function display_prompt(msg) {
 }
 
 function keyPressed() {
-  if (!STEPS[state.step].target) return;
+  if (!isCalibrating()) return;
 
   if (keyCode == ENTER && (state.phase == 'waiting' || state.phase == 'failed')) {
     state.startedAt = millis();
