@@ -9,7 +9,8 @@ export function identityTransformer(raw) {
 // xPoint: raw tracker reading at physical (xDistance, 0, 0)
 // zPoint: raw tracker reading at physical (0, 0, zDistance)
 // xDistance, zDistance: physical distance from the origin to xPoint and to zPoint
-export function createRoomTransformer(origin, xPoint, zPoint, xDistance = 1, zDistance = 1) {
+// xOffset, zOffset: offset of the physical space from the tracker space
+export function createRoomTransformer(origin, xPoint, zPoint, xDistance = 1, zDistance = 1, xOffset = 0, zOffset = 0) {
   // Floor directions of the room's x and z axes, in tracker coordinates
   const xx = xPoint.x - origin.x;
   const xz = xPoint.z - origin.z;
@@ -24,17 +25,17 @@ export function createRoomTransformer(origin, xPoint, zPoint, xDistance = 1, zDi
     throw new Error('Room calibration failed: origin, xPoint and zPoint are on one line, or a reading is missing.');
   }
 
-  // The room's x and z axes should be at a right angle and share one scale. Warn if a point looks misplaced.
+  // The room's x and z axes should be at a right angle and share one scale. If not, a point was misplaced.
   const cos = (xx * zx + xz * zz) / (xLen * zLen);
   if (Math.abs(cos) > 0.1) {
     const angle = Math.round(Math.acos(cos) * 180 / Math.PI);
-    console.warn('Room calibration: x and z axes are ' + angle + ' degrees apart, expected 90.');
+    throw new Error('Room calibration failed: x and z axes are ' + angle + ' degrees apart, expected 90.');
   }
 
   const xScale = xDistance / xLen;
   const zScale = zDistance / zLen;
   if (Math.abs(xScale - zScale) > 0.05 * xScale) {
-    console.warn('Room calibration: x scale (' + xScale.toFixed(3) + ') and z scale (' + zScale.toFixed(3) + ') differ by more than 5%.');
+    throw new Error('Room calibration failed: x scale (' + xScale.toFixed(3) + ') and z scale (' + zScale.toFixed(3) + ') differ by more than 5%.');
   }
 
   const yScale = xScale;
@@ -44,9 +45,9 @@ export function createRoomTransformer(origin, xPoint, zPoint, xDistance = 1, zDi
     const qz = raw.z - origin.z;
 
     return {
-      x: xDistance * (qx * zz - qz * zx) / det,
+      x: xOffset + xDistance * (qx * zz - qz * zx) / det,
       y: yScale * (raw.y - origin.y), // assume y axis is along the absolute vertical direction
-      z: zDistance * (-qx * xz + qz * xx) / det,
+      z: zOffset + zDistance * (-qx * xz + qz * xx) / det,
     };
   };
 }
