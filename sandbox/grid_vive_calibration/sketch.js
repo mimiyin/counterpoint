@@ -67,6 +67,12 @@ function setup() {
 
 // Generate a fake tracker position based on the current step
 function fakeTrackerPos() {
+  // uncomment the following lines to simulate a failed calibration
+  // if (state.step == 'check') {
+  //   const target = steps.check.target;
+  //   return { x: target.x + 0.5 * w, y: target.y + 0.3 * h };
+  // }
+
   if (isCalibrating()) return steps[state.step].target;
 
   const t = millis() / 1000;
