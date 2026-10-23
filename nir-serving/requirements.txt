@@ -1,0 +1,4 @@
+# Only needed for `infer` and `prepare`. `replay` uses Python stdlib.
+numpy>=1.24,<3
+opencv-python>=4.8,<5
+torch>=2.2,<3

@@ -1,0 +1,10 @@
+diff --git a/sandbox/server.js b/sandbox/server.js
+--- a/sandbox/server.js
++++ b/sandbox/server.js
+@@ -38,5 +38,6 @@
+ // Create socket server
+ let io = require('socket.io')(server);
++require('../nir-serving/relay')(app, io, express);
+ 
+ const mqtt = require("mqtt");
+ const client = mqtt.connect("mqtt://10.0.0.254:1883");

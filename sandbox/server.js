@@ -44,6 +44,7 @@ let server = require('http').createServer(app).listen(PORT, function () {
 
 // Create socket server
 let io = require('socket.io')(server);
+require('../nir-serving/relay')(app, io, express);
 
 const mqtt = require("mqtt");
 const client = mqtt.connect("mqtt://10.0.0.254:1883");

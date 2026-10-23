@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>nir-configure</title>
+  <link rel="stylesheet" href="configure.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <main>
+    <canvas id="view"></canvas>
+    <aside>
+      <h1>NIR configure</h1>
+      <p class="note">Adjust, then <b>Save</b>. <code>serve.py</code> reads the saved file and applies rotate / crop / fps / confidence within a frame or two. No restart needed. Order: rotate the whole frame, then crop. Drag inside the canvas to move the crop.</p>
+
+      <div id="saveBar">
+        <button id="save" type="button">Save</button>
+        <button id="revert" type="button">Revert</button>
+        <span id="saveState"></span>
+      </div>
+
+      <h2>Camera</h2>
+      <label>Stream URL <small>(restart serve.py to apply)</small>
+        <input id="source" type="text" spellcheck="false">
+      </label>
+      <p id="status" class="note">waiting for frame…</p>
+
+      <h2>Rotate (clockwise +)</h2>
+      <div class="row">
+        <input id="rotate" type="range" min="-180" max="180" step="0.5">
+        <input id="rotateN" type="number" min="-180" max="180" step="0.5">
+        <span>°</span>
+      </div>
+      <div class="row buttons">
+        <button type="button" data-rot="-90">-90</button>
+        <button type="button" data-rot="-1">-1</button>
+        <button type="button" data-rot="0">0</button>
+        <button type="button" data-rot="1">+1</button>
+        <button type="button" data-rot="90">+90</button>
+        <button type="button" data-rot="180">180</button>
+      </div>
+      <p class="note" id="ccw"></p>
+
+      <h2>Crop (% of frame)</h2>
+      <label class="check"><input id="lock" type="checkbox"> keep square</label>
+      <div class="row"><span class="k">width</span><input id="w" type="range" min="5" max="100" step="0.5"><input id="wN" type="number" step="0.5"><span>%</span></div>
+      <div class="row"><span class="k">height</span><input id="h" type="range" min="5" max="100" step="0.5"><input id="hN" type="number" step="0.5"><span>%</span></div>
+      <div class="row"><span class="k">centre x</span><input id="cx" type="range" min="0" max="100" step="0.5"><input id="cxN" type="number" step="0.5"><span>%</span></div>
+      <div class="row"><span class="k">centre y</span><input id="cy" type="range" min="0" max="100" step="0.5"><input id="cyN" type="number" step="0.5"><span>%</span></div>
+      <p class="note" id="roiInfo"></p>
+
+      <h2>Detection</h2>
+      <div class="row"><span class="k">fps</span><input id="fps" type="range" min="1" max="15" step="1"><input id="fpsN" type="number" min="1" max="60" step="1"></div>
+      <p class="note">Also written into the stream URL (<code>fps=</code>) so the camera sends only what is processed.</p>
+      <div class="row"><span class="k">confidence</span><input id="confidence" type="range" min="0.05" max="0.95" step="0.05"><input id="confidenceN" type="number" min="0.05" max="1" step="0.05"></div>
+      <label>Device <small>(restart serve.py to apply)</small>
+        <select id="device"><option>auto</option><option>cuda</option><option>cpu</option></select>
+      </label>
+
+      <h2>Overlay (display only)</h2>
+      <label class="check"><input id="grid" type="checkbox"> thirds grid in crop</label>
+      <label class="check"><input id="dots" type="checkbox"> live detections <span id="count"></span></label>
+    </aside>
+  </main>
+  <script src="configure.js"></script>
+</body>
+</html>

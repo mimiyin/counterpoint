@@ -1,0 +1,5 @@
+weights/*.ckpt
+input.mp4
+.venv/
+__pycache__/
+config.json.tmp

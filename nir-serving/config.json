@@ -1,0 +1,13 @@
+{
+  "source": "http://192.168.0.90/axis-cgi/mjpg/video.cgi?resolution=2992x2992&fps=4",
+  "rotate": 61,
+  "roi": [
+    621,
+    621,
+    2371,
+    2371
+  ],
+  "fps": 4,
+  "confidence": 0.25,
+  "device": "auto"
+}
