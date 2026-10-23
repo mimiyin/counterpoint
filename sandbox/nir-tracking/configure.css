@@ -1,0 +1,24 @@
+html, body { margin: 0; height: 100%; background: #111; color: #ddd; font: 13px/1.4 system-ui, sans-serif; }
+main { display: flex; height: 100%; }
+canvas { flex: 1 1 auto; min-width: 0; background: #000; cursor: move; }
+aside { flex: 0 0 360px; box-sizing: border-box; padding: 12px 16px; overflow-y: auto; border-left: 1px solid #333; }
+h1 { font-size: 16px; margin: 0 0 4px; }
+h2 { font-size: 13px; margin: 16px 0 6px; color: #fff; }
+small { color: #888; font-weight: normal; }
+.note { color: #888; margin: 4px 0 8px; }
+label { display: block; margin: 6px 0; }
+label.check { display: flex; align-items: center; gap: 6px; }
+input[type=text], select { width: 100%; box-sizing: border-box; margin-top: 2px; background: #222; color: #ddd; border: 1px solid #444; padding: 4px; }
+input[type=number] { width: 64px; background: #222; color: #ddd; border: 1px solid #444; padding: 2px 4px; }
+.row { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.row input[type=range] { flex: 1 1 auto; min-width: 0; }
+.row .k { width: 70px; color: #aaa; }
+.buttons button { flex: 1; }
+button { background: #2a2a2a; color: #ddd; border: 1px solid #555; padding: 4px 8px; cursor: pointer; }
+button:hover:not(:disabled) { background: #3a3a3a; }
+button:disabled { opacity: 0.4; cursor: default; }
+#saveBar { position: sticky; top: -12px; z-index: 1; display: flex; align-items: center; gap: 8px; background: #111; padding: 8px 0; margin: 0 0 4px; border-bottom: 1px solid #333; }
+#save.dirty { background: #1d6b2d; border-color: #3f3; color: #fff; }
+#saveState { color: #888; }
+#saveState.err { color: #f66; }
+code { color: #9f9; }

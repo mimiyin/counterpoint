@@ -1,5 +1,9 @@
 # counterpoint
 
+## NIR camera people detection
+
+Overhead NIR camera feed drives the `nir-tracking` sketch. Install and usage: [nir-serving/README.md](nir-serving/README.md).
+
 ## HTC VIVE Setup Without Headset
 
 SteamVR normally refuses to start tracking unless a headset is connected. The scripts in `utils/vive-tracker-headsetless/` change two SteamVR settings files so that VIVE Trackers work with only base stations, and can put the files back afterwards.
