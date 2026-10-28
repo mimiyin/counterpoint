@@ -7,6 +7,16 @@ const HEIGHT = 4320;
 // Auto-pilot
 let pozyx_on = true;
 
+// Position source: uncomment one
+const SOURCE = 'pozyx';
+// const SOURCE = 'vive';
+
+// VIVE calibration saved by the grid_vive_calibration sketch, in sandbox/config/
+const VIVE_CONFIG = '/config/grid_vive_calibration_2026-10-28_13-09-19.json';
+
+// VIVE positions are averaged over this many readings to smooth out noise
+const VIVE_AVG = 15;
+
 // Sockets
 let socket = io();
 socket.on('connect', function () {
@@ -26,6 +36,11 @@ const XYZ = 3;
 
 // Listen for data coming from the server
 function pozyx() {
+  if (SOURCE == 'vive') {
+    listen_vive();
+    return;
+  }
+
   socket.on('pozyx', function (message) {
     if (!pozyx_on) return;
     //return;
@@ -85,6 +100,42 @@ function pozyx() {
       }
     }
   });
+}
+
+// Listen for VIVE Tracker data instead of Pozyx.
+// The calibration already puts positions in canvas pixels, so calc_pos is not used.
+// Averaging over VIVE_AVG readings takes the place of the acceleration filter.
+async function listen_vive() {
+  try {
+    const { TrackerStore, createRoomTransformerFromConfig, isValidMessage } = await import('/tracker/index.js');
+    const response = await fetch(VIVE_CONFIG);
+    if (!response.ok) throw new Error(VIVE_CONFIG + ' answered ' + response.status);
+    const store = new TrackerStore(createRoomTransformerFromConfig(await response.json()));
+
+    socket.on('trackers', function (message) {
+      if (!pozyx_on) return;
+
+      store.update(message);
+      if (!isValidMessage(message)) return;
+
+      for (let raw of message.trackers) {
+        let tracker = store.getTrackers()[raw.id];
+        let pos = tracker ? tracker.getPosByAvg(VIVE_AVG) : null;
+        if (!pos) continue;
+
+        // The tracker's floor is x and z, the canvas is x and y
+        let exists = raw.id in tags;
+        tags[raw.id] = {
+          px: exists ? tags[raw.id].x : pos.x,
+          py: exists ? tags[raw.id].y : pos.z,
+          x: pos.x,
+          y: pos.z,
+        };
+      }
+    });
+  } catch (error) {
+    console.error('VIVE tracking did not start:', error);
+  }
 }
 
 function build_hist(hist, accs){
