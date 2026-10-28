@@ -30,6 +30,43 @@ const app = express();
 // Tell server where to look for files
 app.use(express.static('./'));
 
+// Save the VIVE calibration sent by the grid_vive_calibration sketch into config/.
+// Each save gets its own timestamped file, so earlier calibrations are never overwritten.
+app.post('/config/grid_vive_calibration', express.json(), function (req, res) {
+  const config = req.body;
+  if (!config || !config.origin || !config.xPoint || !config.zPoint) {
+    res.status(400).json({ error: 'Expected origin, xPoint and zPoint.' });
+    return;
+  }
+
+  // Local time, without characters Windows does not allow in file names, e.g. 2026-10-28_15-30-05
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const stamp = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate())
+    + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+
+  const saved = { savedAt: now.toISOString(), ...config };
+  const file = 'config/grid_vive_calibration_' + stamp + '.json';
+
+  fs.mkdir('config', { recursive: true }, (err) => {
+    if (err) {
+      console.error("An error occurred while creating the config folder:", err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    fs.writeFile(file, JSON.stringify(saved, null, 2) + '\n', 'utf8', (err) => {
+      if (err) {
+        console.error("An error occurred while writing the calibration:", err);
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      console.log("VIVE calibration saved to " + file);
+      res.json({ saved: file });
+    });
+  });
+});
+
 // Make a web application server!
 // let server = require('https').createServer({
 //   key: key,
