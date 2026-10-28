@@ -88,3 +88,52 @@ function setup() {
 window.preload = preload;
 window.setup = setup;
 ```
+
+## Test VIVE without a tracker
+
+A fake tracker can stand in for a real one, so the whole chain can be tested on one computer: calibration, saving the config, loading it in a sketch, and positions arriving in `tags`. The fake tracker turns canvas pixels into made-up tracker units and adds a little jitter, so a calibration made with it fits the fake tracker only.
+
+### Make a fake calibration
+
+1. In `sandbox/grid_vive_calibration/sketch.js`, switch the source in `setup()` to the fake one:
+
+```js
+connectFake(store, fakeRoomTracker(fakeTrackerPos));
+// connectSocket(store);
+```
+
+2. Open the sketch fullscreen, at the same size as the sketch you want to test. The fake tracker sits on each target by itself, so just press ENTER at every step. In the free step it moves around on its own.
+
+3. Press ENTER to save. The server writes a new `grid_vive_calibration_<time>.json` to `sandbox/config/`.
+
+To see a failed check instead, uncomment the lines at the top of `fakeTrackerPos()`. The fake tracker then lands off the bottom-right target.
+
+### Run a Pozyx sketch on the fake tracker
+
+The `grid_pozyx_*` sketches get positions from `sandbox/pozyx.js`. In that file:
+
+1. Select the VIVE source:
+
+```js
+// const SOURCE = 'pozyx';
+const SOURCE = 'vive';
+```
+
+2. Set `VIVE_CONFIG` to the fake calibration you just saved, for example `'/config/grid_vive_calibration_2026-10-28_15-30-05.json'`.
+
+3. Uncomment the fake tracker in `listen_vive()`. `fake1` follows the mouse. Also uncomment `fake2`, which mirrors the mouse, for sketches that need two movers, such as `grid_pozyx_notes` and `grid_pozyx_rhythms`.
+
+```js
+connectFake({ update: on_trackers }, fakeRoomTracker(() => ({ x: mouseX, y: mouseY })));
+connectFake({ update: on_trackers }, fakeRoomTracker(() => ({ x: width - mouseX, y: mouseY }), 'fake2'));
+```
+
+4. Open the sketch at the same fullscreen size and hover the mouse. A mover should follow it within a quarter of a second, the time it takes to collect the 15 readings each position is averaged over. In `grid_pozyx_one_tag_interaction`, press `i` first to switch to tracker input.
+
+If nothing shows up, check the console for `VIVE tracking did not start: ...`.
+
+### Before committing
+
+- Comment the `connectFake` lines out again, in both `pozyx.js` and the calibration sketch, and switch the calibration sketch back to `connectSocket(store)`.
+- Set `SOURCE` back to the source the sketches should use.
+- Delete the fake calibration from `sandbox/config/`, and point `VIVE_CONFIG` at a real one.

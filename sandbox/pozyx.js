@@ -12,7 +12,7 @@ const SOURCE = 'pozyx';
 // const SOURCE = 'vive';
 
 // VIVE calibration saved by the grid_vive_calibration sketch, in sandbox/config/
-const VIVE_CONFIG = '/config/grid_vive_calibration_2026-10-28_13-09-19.json';
+const VIVE_CONFIG = '/config/grid_vive_calibration_2026-10-28_13-53-26.json';
 
 // VIVE positions are averaged over this many readings to smooth out noise
 const VIVE_AVG = 15;
@@ -34,8 +34,15 @@ const Y_OFF = -100;
 // Distance to Acceleration TH for filtering noisy pos data
 const XYZ = 3;
 
-// Listen for data coming from the server
+// Set once pozyx() has started listening
+let pozyx_started = false;
+
+// Listen for data coming from the server.
+// Only the first call does anything, so sketches can call it again without adding listeners.
 function pozyx() {
+  if (pozyx_started) return;
+  pozyx_started = true;
+
   if (SOURCE == 'vive') {
     listen_vive();
     return;
@@ -107,12 +114,12 @@ function pozyx() {
 // Averaging over VIVE_AVG readings takes the place of the acceleration filter.
 async function listen_vive() {
   try {
-    const { TrackerStore, createRoomTransformerFromConfig, isValidMessage } = await import('/tracker/index.js');
+    const { TrackerStore, createRoomTransformerFromConfig, isValidMessage, connectFake, fakeRoomTracker } = await import('/tracker/index.js');
     const response = await fetch(VIVE_CONFIG);
     if (!response.ok) throw new Error(VIVE_CONFIG + ' answered ' + response.status);
     const store = new TrackerStore(createRoomTransformerFromConfig(await response.json()));
 
-    socket.on('trackers', function (message) {
+    function on_trackers(message) {
       if (!pozyx_on) return;
 
       store.update(message);
@@ -132,7 +139,15 @@ async function listen_vive() {
           y: pos.z,
         };
       }
-    });
+    }
+
+    socket.on('trackers', on_trackers);
+
+    // Uncomment to test without a tracker: a fake tracker follows the mouse.
+    // Only use it with a VIVE_CONFIG made with the fake source in grid_vive_calibration.
+    // connectFake({ update: on_trackers }, fakeRoomTracker(() => ({ x: mouseX, y: mouseY })));
+    // Uncomment as well for a second fake tracker that mirrors the mouse, e.g. to test pairs in grid_pozyx_notes
+    // connectFake({ update: on_trackers }, fakeRoomTracker(() => ({ x: width - mouseX, y: mouseY }), 'fake2'));
   } catch (error) {
     console.error('VIVE tracking did not start:', error);
   }
