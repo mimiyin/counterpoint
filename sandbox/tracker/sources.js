@@ -23,7 +23,7 @@ export function connectFake(store, getTrackers, rate = 60) {
   return () => clearInterval(timer);
 }
 
-export function fakeRoomTracker(getCanvasPos) {
+export function fakeRoomTracker(getCanvasPos, id = 'fake1') {
   const metresPerPixel = 0.002;
   const jitter = () => (Math.random() * 2 - 1) * 0.0003;
 
@@ -31,7 +31,7 @@ export function fakeRoomTracker(getCanvasPos) {
     const pos = getCanvasPos();
 
     return [{
-      id: 'fake1',
+      id: id,
       x: pos.x * metresPerPixel + jitter(),
       y: 0.03 + jitter(),
       z: pos.y * metresPerPixel + jitter(),

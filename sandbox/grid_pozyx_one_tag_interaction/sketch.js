@@ -1,5 +1,6 @@
 let INPUT_MODE = 'KEYBOARD';
-const TRACKED_TAG_ID = '10002042';
+// The tag that moves the human: the first tag that shows up, Pozyx or VIVE. Reload to pick again.
+let trackedTagId = null;
 
 const COLS = 7;
 const ROWS = 10;
@@ -464,7 +465,11 @@ function draw() {
   }
 
   if (INPUT_MODE === 'POZYX') {
-    let tag = tags[TRACKED_TAG_ID];
+    if (trackedTagId === null) {
+      trackedTagId = Object.keys(tags)[0] ?? null;
+      if (trackedTagId !== null) console.log('Tracked tag:', trackedTagId);
+    }
+    let tag = tags[trackedTagId];
     if (tag) {
       let cell = getCellFromCanvas(tag.x, tag.y);
       if (!pozyxPendingCell || pozyxPendingCell.col !== cell.col || pozyxPendingCell.row !== cell.row) {
@@ -571,7 +576,7 @@ function drawStatus() {
   let l4 = 'Tracked tag: ';
   text(l4, x, nextY);
   textStyle(BOLD);
-  text(TRACKED_TAG_ID, x + textWidth(l4), nextY);
+  text(trackedTagId ?? 'waiting', x + textWidth(l4), nextY);
   nextY += 40;
 
   // Toggle lines
