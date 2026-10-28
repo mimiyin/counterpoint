@@ -9,6 +9,9 @@ let steps; // calibration steps
 const SAMPLES = 60;
 const CAPTURE_MS = 1500;
 
+// Where the calibration is sent to be saved. The server adds a timestamp to the file name.
+const SAVE_URL = '../config/grid_vive_calibration';
+
 // How far the fourth corner may land from its target on each axis and still pass, as a fraction of a cell
 const CHECK_TOLERANCE = 0.1;
 
@@ -61,7 +64,7 @@ function setup() {
   h = height / ROWS;
   steps = generateSteps(w * 2, h);
 
-  // connectFake(store, fakeRoomTracker(fakeTrackerPos));
+  //connectFake(store, fakeRoomTracker(fakeTrackerPos));
   connectSocket(store);
 }
 
@@ -219,6 +222,7 @@ function render() {
     display_prompt(promptText());
   } else {
     display_tracker();
+    display_status(state.message);
   }
 }
 
@@ -302,6 +306,20 @@ function display_circle(pos, name) {
   pop();
 }
 
+// A small line in the corner while moving freely, e.g. whether the save worked
+function display_status(msg) {
+  if (!msg) return;
+
+  push();
+  textSize(width / 80);
+  textAlign(LEFT, TOP);
+  fill('blue');
+  stroke(255);
+  strokeWeight(4);
+  text(msg, 20, 20);
+  pop();
+}
+
 function display_prompt(msg) {
   const size = width / 40;
 
@@ -319,7 +337,7 @@ function display_prompt(msg) {
 
 function keyPressed() {
   if (state.step == 'free' && keyCode == ENTER) {
-    save(state.config, 'grid_vive_calibration.json');
+    saveConfig();
   }
 
   if (!isCalibrating()) return;
@@ -327,6 +345,25 @@ function keyPressed() {
   if (keyCode == ENTER && (state.phase == 'waiting' || state.phase == 'failed')) {
     state.startedAt = millis();
     state.phase = 'collecting';
+  }
+}
+
+// Sends the calibration to the sandbox server, which writes it to sandbox/config/
+async function saveConfig() {
+  try {
+    const response = await fetch(SAVE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.config),
+    });
+    if (!response.ok) throw new Error('the server answered ' + response.status);
+
+    const result = await response.json();
+    console.log('Calibration saved', result, state.config);
+    state.message = 'Saved as ' + result.saved;
+  } catch (error) {
+    console.error('Calibration was not saved:', error);
+    state.message = 'Not saved: ' + error.message;
   }
 }
 
