@@ -59,10 +59,10 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   w = width / COLS;
   h = height / ROWS;
-  steps = generateSteps(w, h);
+  steps = generateSteps(w * 2, h);
 
-  connectFake(store, fakeRoomTracker(fakeTrackerPos));
-  // connectSocket(store);
+  // connectFake(store, fakeRoomTracker(fakeTrackerPos));
+  connectSocket(store);
 }
 
 // Generate a fake tracker position based on the current step
@@ -279,7 +279,7 @@ function captureProgress() {
 }
 
 function display_target(target) {
-  const colors = { waiting: 'grey', collecting: 'orange', failed: 'red' };
+  const colors = { waiting: 'blue', collecting: 'orange', failed: 'red' };
 
   display_circle(target, colors[state.phase]);
 }
@@ -318,6 +318,10 @@ function display_prompt(msg) {
 }
 
 function keyPressed() {
+  if (state.step == 'free' && keyCode == ENTER) {
+    save(state.config, 'grid_vive_calibration.json');
+  }
+
   if (!isCalibrating()) return;
 
   if (keyCode == ENTER && (state.phase == 'waiting' || state.phase == 'failed')) {
