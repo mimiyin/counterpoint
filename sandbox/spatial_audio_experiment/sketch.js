@@ -1,4 +1,5 @@
 import { TrackerStore, connectSocket, connectFake, keyboardRoomTracker, createRoomTransformer, createRoomTransformerFromConfig, identityTransformer } from '../tracker/index.js';
+import { io } from '/socket.io/socket.io.esm.min.js';
 
 const COLS = 7;
 const ROWS = 10;
@@ -27,8 +28,15 @@ const ROOM_MATERIALS = {
   front: 'plaster-smooth', back: 'plaster-smooth',
   down: 'polished-concrete-or-tile', up: 'acoustic-ceiling-tiles',
 };
+
+let room;
 let scene, bellSource;
-let bellPos = null; // canvas pixels, where the bell was last clicked
+let bellPos = null;
+let listenerPos = null;
+
+// The whole spatial audio scene is sent to the server this often, for the participant's phone
+const SEND_MS = 1000 / 30;
+let socket;
 
 function preload() {
   // config = loadJSON(VIVE_CONFIG);
@@ -57,14 +65,24 @@ function setup() {
   scene = new ResonanceAudio(getAudioContext());
   scene.output.connect(getAudioContext().destination);
   scene.setListenerOrientation(0, 0, -1, 0, 1, 0); // facing forward, head up
-  scene.setRoomProperties(
-    { width: width * metresPerPixel, height: ROOM_HEIGHT_M, depth: height * metresPerPixel },
-    ROOM_MATERIALS
-  );
+  room = { width: width * metresPerPixel, height: ROOM_HEIGHT_M, depth: height * metresPerPixel };
+  scene.setRoomProperties(room, ROOM_MATERIALS);
 
   bellSource = scene.createSource();
   bell.disconnect();
   bell.connect(bellSource.input);
+
+  socket = io();
+  setInterval(sendSpatialAudioScene, SEND_MS);
+}
+
+function sendSpatialAudioScene() {
+  socket.emit('spatial_audio_scene', {
+    ts: Date.now() / 1000,
+    room: { ...room, materials: ROOM_MATERIALS },
+    listener: listenerPos,
+    sources: bellPos ? [{ id: 'bell', sound: 'bell', ...toRoom(bellPos.x, bellPos.y), playing: pulseTimer !== null }] : [],
+  });
 }
 
 function draw() {
@@ -77,8 +95,8 @@ function updateListener() {
   const pos = tracker ? tracker.getPosByAvg(SAMPLE_SIZE) : null;
   if (!pos) return;
 
-  const p = toRoom(pos.x, pos.z);
-  scene.setListenerPosition(p.x, p.y, p.z);
+  listenerPos = toRoom(pos.x, pos.z);
+  scene.setListenerPosition(listenerPos.x, listenerPos.y, listenerPos.z);
 }
 
 // Canvas pixels to Resonance metres. Resonance puts the centre of the room at (0, 0, 0),
