@@ -152,6 +152,11 @@ io.on('connection', function (socket) {
     const data = { ts: Date.now() / 1000, trackers: parseTrackers(channels) };
     io.emit("trackers", data);
   })
+
+  // Relay the spatial audio scene from the controller sketch to the participant's phone
+  socket.on("spatial_audio_scene", (scene) => {
+    socket.broadcast.emit("spatial_audio_scene", scene);
+  });
 });
 
 // TD channel name -> unified field name. Anything not listed keeps its name.
