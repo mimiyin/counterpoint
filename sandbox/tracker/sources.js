@@ -39,20 +39,19 @@ export function fakeRoomTracker(getCanvasPos, id = 'fake1') {
   };
 }
 
-// A fake tracker moved with the arrow keys, in tracker units. It starts at (0, 0) on the floor.
-// Hold an arrow key to move it: left and right change x, up and down change z.
+// A fake tracker moved with the W A S D keys, in tracker units. It starts at (0, 0) on the floor.
+// Hold a key to move it: A and D change x, W and S change z.
 // speed: tracker units per second
 export function keyboardRoomTracker(speed = 0.5, id = 'fake1') {
   const pos = { x: 0, z: 0 };
-  const moves = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  // event.code is the physical key, so this works with caps lock, shift and other keyboard layouts
+  const moves = { KeyA: [-1, 0], KeyD: [1, 0], KeyW: [0, -1], KeyS: [0, 1] };
   const held = new Set();
 
   window.addEventListener('keydown', (event) => {
-    if (!(event.key in moves)) return;
-    held.add(event.key);
-    event.preventDefault(); // arrow keys would scroll the page
+    if (event.code in moves) held.add(event.code);
   });
-  window.addEventListener('keyup', (event) => held.delete(event.key));
+  window.addEventListener('keyup', (event) => held.delete(event.code));
   window.addEventListener('blur', () => held.clear()); // a key released in another window is never seen
 
   let last = performance.now();
