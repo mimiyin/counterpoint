@@ -22,6 +22,10 @@ let floorSize = null; // width and depth of the floor in metres, from the contro
 let latest = null;
 let started = false;
 
+let heading = null;
+let forwardHeading = 0;
+let warnings = [];
+
 function preload() {
   bell = loadSound('../GOL_man/bell.wav');
 }
@@ -87,6 +91,61 @@ function setBellPlaying(playing) {
   }
 }
 
+// The phone is held screen-up, so the direction it faces is where its top edge points.
+// alpha is that direction, counterclockwise; tilting the phone (beta) or rolling it (gamma) does not change it,
+// until the phone is nearly upright and the top edge points at the ceiling.
+const MAX_TILT = 70; // degrees; tilted further than this, the heading is unreliable
+let tiltedTooFar = false;
+
+function onOrientation(e) {
+  if (e.alpha === null) return;
+  heading = -e.alpha; // clockwise, so turning right is positive
+  tiltedTooFar = Math.abs(e.beta) > MAX_TILT;
+
+  // Resonance forward is -z. Turning right should swing it towards +x, but Resonance turns the sound
+  // the opposite way (on a phone, turning left moved a front sound to the left ear), so x is negated.
+  const turn = (heading - forwardHeading) * Math.PI / 180;
+  scene.setListenerOrientation(-Math.sin(turn), 0, -Math.cos(turn), 0, 1, 0);
+}
+
+// iOS asks for permission to use the motion sensor, and only from a tap
+async function startMotionSensor() {
+  if (!window.isSecureContext) {
+    warnings.push('Motion sensor needs HTTPS');
+    return;
+  }
+
+  try {
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const answer = await DeviceOrientationEvent.requestPermission();
+      if (answer !== 'granted') throw new Error('permission ' + answer);
+    }
+
+    window.addEventListener('deviceorientation', onOrientation);
+  } catch (error) {
+    warnings.push('Motion sensor: ' + error.message);
+  }
+}
+
+async function keepScreenOn() {
+  if (!('wakeLock' in navigator)) {
+    warnings.push(window.isSecureContext ? 'Screen may sleep: no wake lock in this browser' : 'Screen may sleep: needs HTTPS');
+    return;
+  }
+
+  try {
+    await navigator.wakeLock.request('screen');
+  } catch (error) {
+    warnings.push('Screen may sleep: ' + error.message);
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (started && document.visibilityState === 'visible' && 'wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').catch(() => {});
+  }
+});
+
 function draw() {
   background(started ? 255 : 0);
   fill(started ? 0 : 255);
@@ -95,16 +154,33 @@ function draw() {
 
   if (!started) {
     text('Tap to start', width / 2, height / 2);
-  } else if (!latest) {
-    text('Waiting for the controller', width / 2, height / 2);
-  } else {
-    text(pulseTimer ? 'Bell playing' : 'Listening', width / 2, height / 2);
+    return;
   }
+
+  text(!latest ? 'Waiting for the controller' : pulseTimer ? 'Bell playing' : 'Listening', width / 2, height / 2);
+
+  textSize(width / 25);
+  if (heading !== null) {
+    // How far the phone is turned from forward, -180 to 180 degrees, right is positive
+    const turn = ((heading - forwardHeading) % 360 + 540) % 360 - 180;
+    text('Turned ' + Math.round(turn) + '°\nFace the front and tap to set forward', width / 2, height / 2 + width / 6);
+    if (tiltedTooFar) text('Hold the phone flatter, screen up', width / 2, height / 2 + width / 3);
+  }
+  text(warnings.join('\n'), width / 2, height * 0.8);
 }
 
-// Phones only allow sound after a tap
-function mousePressed() {
+// The first tap starts sound, the motion sensor and the wake lock, which phones only allow from a tap.
+// Later taps set the direction the phone faces now as forward.
+// It runs on the browser's click event: iPhones only show the motion sensor prompt from a real tap like that.
+function mouseClicked() {
+  if (started) {
+    if (heading !== null) forwardHeading = heading;
+    return;
+  }
+
   userStartAudio();
+  startMotionSensor();
+  keepScreenOn();
   started = true;
 }
 
@@ -116,5 +192,5 @@ function windowResized() {
 window.preload = preload;
 window.setup = setup;
 window.draw = draw;
-window.mousePressed = mousePressed;
+window.mouseClicked = mouseClicked;
 window.windowResized = windowResized;

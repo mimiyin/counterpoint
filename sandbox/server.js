@@ -81,6 +81,67 @@ let server = require('http').createServer(app).listen(PORT, function () {
 
 // Create socket server
 let io = require('socket.io')(server);
+
+// HTTPS for the participant's phone: browsers only allow the motion sensor and the screen wake lock on secure pages.
+// The same app is also served on HTTPS_PORT, using key.pem and cert.pem from this folder.
+// If they are missing, a self-signed pair is made for this computer; phones accept it once.
+const HTTPS_PORT = process.env.HTTPS_PORT || 8443;
+startHttps();
+
+async function startHttps() {
+  if (!fs.existsSync('./key.pem') || !fs.existsSync('./cert.pem')) {
+    await createCertificate();
+  }
+
+  const httpsServer = require('https').createServer({
+    key: fs.readFileSync('./key.pem'),
+    cert: fs.readFileSync('./cert.pem'),
+  }, app).listen(HTTPS_PORT, function () {
+    console.log('HTTPS server listening at port: ', HTTPS_PORT);
+  });
+
+  // One socket server for both, so pages on HTTP and HTTPS still talk to each other
+  io.attach(httpsServer);
+}
+
+// A certificate for this computer's current IPv4 addresses, its name and localhost, valid for a year.
+// If the IP address changes later, phones can still use https://<name>.local:8443, or delete the two files to make new ones.
+async function createCertificate() {
+  const os = require('os');
+  // On a Mac, the name phones find on the network can differ from os.hostname()
+  const host = os.platform() === 'darwin'
+    ? require('child_process').execSync('scutil --get LocalHostName').toString().trim()
+    : os.hostname().replace(/\.local$/, '');
+  const names = ['localhost', host, host + '.local'];
+  const ips = Object.values(os.networkInterfaces()).flat()
+    .filter((address) => address.family === 'IPv4')
+    .map((address) => address.address);
+
+  const notAfterDate = new Date();
+  notAfterDate.setFullYear(notAfterDate.getFullYear() + 1);
+
+  const pems = await require('selfsigned').generate([{ name: 'commonName', value: 'counterpoint' }], {
+    keySize: 2048,
+    algorithm: 'sha256', // browsers reject the default, sha1
+    notAfterDate: notAfterDate,
+    extensions: [
+      { name: 'basicConstraints', cA: false },
+      { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
+      { name: 'extKeyUsage', serverAuth: true }, // iPhones require this
+      {
+        name: 'subjectAltName',
+        altNames: [
+          ...names.map((name) => ({ type: 2, value: name })),
+          ...ips.map((ip) => ({ type: 7, ip: ip })),
+        ],
+      },
+    ],
+  });
+
+  fs.writeFileSync('./key.pem', pems.private, { mode: 0o600 }); // the private key stays private to this user
+  fs.writeFileSync('./cert.pem', pems.cert);
+  console.log('Created key.pem and cert.pem for ' + names.concat(ips).join(', '));
+}
 require('../nir-serving/relay')(app, io, express);
 
 const mqtt = require("mqtt");
