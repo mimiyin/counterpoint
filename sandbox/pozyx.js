@@ -12,7 +12,7 @@ const SOURCE = 'pozyx';
 // const SOURCE = 'vive';
 
 // VIVE calibration saved by the grid_vive_calibration sketch, in sandbox/config/
-const VIVE_CONFIG = '/config/grid_vive_calibration_2026-10-28_13-53-26.json';
+const VIVE_CONFIG = '/config/grid_vive_calibration_2026-11-06_16-05-09.json';
 
 // VIVE positions are averaged over this many readings to smooth out noise
 const VIVE_AVG = 15;
