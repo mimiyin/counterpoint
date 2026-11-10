@@ -1,3 +1,6 @@
 node_modules/
 AGENTS.md
 .DS_Store
+# HTTPS certificate for the sandbox server, made on each machine
+sandbox/key.pem
+sandbox/cert.pem
