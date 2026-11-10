@@ -52,6 +52,14 @@ export function createRoomTransformer(origin, xPoint, zPoint, xDistance = 1, zDi
   };
 }
 
+// It is metres per pixel only if the tracker reports metres.
+export function metresPerPixelFromConfig(config) {
+  const { origin, xPoint, zPoint } = config;
+  const xLen = Math.hypot(xPoint.x - origin.x, xPoint.z - origin.z);
+  const zLen = Math.hypot(zPoint.x - origin.x, zPoint.z - origin.z);
+  return (xLen / config.xDistance + zLen / config.zDistance) / 2;
+}
+
 export function createRoomTransformerFromConfig(config) {
   return createRoomTransformer(
     config.origin,

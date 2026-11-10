@@ -1,4 +1,4 @@
-import { TrackerStore, connectSocket, connectFake, keyboardRoomTracker, createRoomTransformer, createRoomTransformerFromConfig, identityTransformer } from '../tracker/index.js';
+import { TrackerStore, connectSocket, connectFake, keyboardRoomTracker, createRoomTransformer, createRoomTransformerFromConfig, metresPerPixelFromConfig, identityTransformer } from '../tracker/index.js';
 import { io } from '/socket.io/socket.io.esm.min.js';
 
 const COLS = 7;
@@ -12,27 +12,14 @@ const VIVE_CONFIG = '../config/grid_vive_calibration_2026-10-28_15-30-05.json';
 let config;
 let store;
 
-const PULSE_MS = 1500;
-let bell;
-let pulseTimer = null;
-
-// Spatial audio with Resonance Audio, for headphones. Resonance works in metres:
-// x to the right, y up, -z forward. The listener always faces forward, the top of the canvas.
-const FLOOR_WIDTH_M = 7; // real width of the projected floor, in metres
+// The controller places the sounds and sends the scene; the participant's phone (spatial_audio_client) plays it.
+// Positions are sent in floor metres from the top-left corner of the canvas: x across, z down.
+const FLOOR_WIDTH_M = 7; // real width of the projected floor, in metres; only used without a calibration config
 let metresPerPixel;
 
-const ROOM_HEIGHT_M = 3;
-const EAR_HEIGHT_M = 1.6;
-const ROOM_MATERIALS = {
-  left: 'plaster-smooth', right: 'plaster-smooth',
-  front: 'plaster-smooth', back: 'plaster-smooth',
-  down: 'polished-concrete-or-tile', up: 'acoustic-ceiling-tiles',
-};
-
-let room;
-let scene, bellSource;
-let bellPos = null;
-let listenerPos = null;
+let bellPos = null; // canvas pixels, where the bell was last clicked
+let bellPlaying = false;
+let listenerPos = null; // canvas pixels, from the tracker
 
 // The whole spatial audio scene is sent to the server this often, for the participant's phone
 const SEND_MS = 1000 / 30;
@@ -40,7 +27,6 @@ let socket;
 
 function preload() {
   // config = loadJSON(VIVE_CONFIG);
-  bell = loadSound('../GOL_man/bell.wav');
 }
 
 function setup() {
@@ -56,33 +42,26 @@ function setup() {
   store = new TrackerStore(identityTransformer);
   connectFake(store, keyboardRoomTracker(400));
 
-  // Audio setup
-  bell.playMode('restart');
-  bell.setVolume(0.5);
-
-  // Resonance shares p5's audio context, and the bell plays through a Resonance source instead of straight out
-  metresPerPixel = FLOOR_WIDTH_M / width;
-  scene = new ResonanceAudio(getAudioContext());
-  scene.output.connect(getAudioContext().destination);
-  scene.setListenerOrientation(0, 0, -1, 0, 1, 0); // facing forward, head up
-  room = { width: width * metresPerPixel, height: ROOM_HEIGHT_M, depth: height * metresPerPixel };
-  scene.setRoomProperties(room, ROOM_MATERIALS);
-
-  bellSource = scene.createSource();
-  bell.disconnect();
-  bell.connect(bellSource.input);
+  // From the calibration when there is one, assuming the tracker reports metres
+  metresPerPixel = config ? metresPerPixelFromConfig(config) : FLOOR_WIDTH_M / width;
 
   socket = io();
   setInterval(sendSpatialAudioScene, SEND_MS);
 }
 
+// The current state only: where the listener and the sounds are, and which sounds are playing
 function sendSpatialAudioScene() {
   socket.emit('spatial_audio_scene', {
     ts: Date.now() / 1000,
-    room: { ...room, materials: ROOM_MATERIALS },
-    listener: listenerPos,
-    sources: bellPos ? [{ id: 'bell', sound: 'bell', ...toRoom(bellPos.x, bellPos.y), playing: pulseTimer !== null }] : [],
+    floor: { width: width * metresPerPixel, depth: height * metresPerPixel },
+    listener: listenerPos ? toFloor(listenerPos.x, listenerPos.y) : null,
+    sources: bellPos ? [{ id: 'bell', sound: 'bell', ...toFloor(bellPos.x, bellPos.y), playing: bellPlaying }] : [],
   });
+}
+
+// Canvas pixels to floor metres
+function toFloor(x, y) {
+  return { x: x * metresPerPixel, z: y * metresPerPixel };
 }
 
 function draw() {
@@ -95,19 +74,7 @@ function updateListener() {
   const pos = tracker ? tracker.getPosByAvg(SAMPLE_SIZE) : null;
   if (!pos) return;
 
-  listenerPos = toRoom(pos.x, pos.z);
-  scene.setListenerPosition(listenerPos.x, listenerPos.y, listenerPos.z);
-}
-
-// Canvas pixels to Resonance metres. Resonance puts the centre of the room at (0, 0, 0),
-// so the canvas centre becomes x = 0, z = 0, and ear height is measured up from the floor.
-// Canvas x is Resonance x, canvas down (tracker z) is Resonance +z, which is behind the listener.
-function toRoom(x, z) {
-  return {
-    x: (x - width / 2) * metresPerPixel,
-    y: EAR_HEIGHT_M - ROOM_HEIGHT_M / 2,
-    z: (z - height / 2) * metresPerPixel,
-  };
+  listenerPos = { x: pos.x, y: pos.z };
 }
 
 function getTracker() {
@@ -128,7 +95,7 @@ function display_bell() {
 
   push();
   noStroke();
-  fill(pulseTimer ? 'orange' : 'gray');
+  fill(bellPlaying ? 'orange' : 'gray');
   circle(bellPos.x, bellPos.y, DIAM / 2);
   pop();
 }
@@ -174,24 +141,13 @@ function getCell(x, y) {
   return { x: cx, y: cy }
 }
 
-// The bell is placed where the mouse is pressed, and strikes there while it is held
 function mousePressed() {
-  userStartAudio();
   bellPos = { x: mouseX, y: mouseY };
-  const p = toRoom(mouseX, mouseY);
-  bellSource.setPosition(p.x, p.y, p.z);
-  pulse();
-  clearInterval(pulseTimer);
-  pulseTimer = setInterval(pulse, PULSE_MS);
+  bellPlaying = true;
 }
 
 function mouseReleased() {
-  clearInterval(pulseTimer);
-  pulseTimer = null;
-}
-
-function pulse() {
-  bell.play();
+  bellPlaying = false;
 }
 
 // p5 looks for these on window, and a module does not put them there
