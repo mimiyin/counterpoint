@@ -98,6 +98,7 @@ async function startHttps() {
     cert: fs.readFileSync('./cert.pem'),
   }, app).listen(HTTPS_PORT, function () {
     console.log('HTTPS server listening at port: ', HTTPS_PORT);
+    logPhoneAddresses();
   });
 
   // One socket server for both, so pages on HTTP and HTTPS still talk to each other
@@ -107,15 +108,9 @@ async function startHttps() {
 // A certificate for this computer's current IPv4 addresses, its name and localhost, valid for a year.
 // If the IP address changes later, phones can still use https://<name>.local:8443, or delete the two files to make new ones.
 async function createCertificate() {
-  const os = require('os');
-  // On a Mac, the name phones find on the network can differ from os.hostname()
-  const host = os.platform() === 'darwin'
-    ? require('child_process').execSync('scutil --get LocalHostName').toString().trim()
-    : os.hostname().replace(/\.local$/, '');
+  const host = networkName();
   const names = ['localhost', host, host + '.local'];
-  const ips = Object.values(os.networkInterfaces()).flat()
-    .filter((address) => address.family === 'IPv4')
-    .map((address) => address.address);
+  const ips = networkIPs();
 
   const notAfterDate = new Date();
   notAfterDate.setFullYear(notAfterDate.getFullYear() + 1);
@@ -141,6 +136,34 @@ async function createCertificate() {
   fs.writeFileSync('./key.pem', pems.private, { mode: 0o600 }); // the private key stays private to this user
   fs.writeFileSync('./cert.pem', pems.cert);
   console.log('Created key.pem and cert.pem for ' + names.concat(ips).join(', '));
+}
+
+// The name phones find this computer by on the network. On a Mac it can differ from os.hostname().
+function networkName() {
+  const os = require('os');
+  return os.platform() === 'darwin'
+    ? require('child_process').execSync('scutil --get LocalHostName').toString().trim()
+    : os.hostname().replace(/\.local$/, '');
+}
+
+// This computer's IPv4 addresses, including 127.0.0.1
+function networkIPs() {
+  return Object.values(require('os').networkInterfaces()).flat()
+    .filter((address) => address.family === 'IPv4')
+    .map((address) => address.address);
+}
+
+// Where the participant's phone can open the client, printed at every start because the IP address can change.
+// An address the certificate does not cover still works, but the phone warns about the certificate again.
+function logPhoneAddresses() {
+  const { X509Certificate } = require('crypto');
+  const covered = new X509Certificate(fs.readFileSync('./cert.pem')).subjectAltName || '';
+  console.log('Phones can open the client at:');
+  for (const ip of networkIPs().filter((ip) => ip !== '127.0.0.1')) {
+    const note = covered.includes('IP Address:' + ip) ? '' : '  (not in cert.pem: delete key.pem and cert.pem and restart to add it)';
+    console.log('  https://' + ip + ':' + HTTPS_PORT + '/spatial_audio_client/' + note);
+  }
+  console.log('  https://' + networkName() + '.local:' + HTTPS_PORT + '/spatial_audio_client/');
 }
 require('../nir-serving/relay')(app, io, express);
 
