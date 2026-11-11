@@ -5,7 +5,7 @@ const WIDTH = 3840;
 const HEIGHT = 4320;
 
 // Auto-pilot
-let pozyx_on = true;
+let pozyx_on = false;
 
 // Position source: uncomment one
 const SOURCE = 'pozyx';
@@ -225,11 +225,11 @@ function init_movers(count) {
 
   for (let c = 0; c < count; c++) {
     // Set x,y location of mover
-    let x = count > 1 ? random(width) : mouseX;
-    let y = count > 1 ? random(height) : mouseY;
+    let x = width/2;
+    let y = height/2;
     
     // Create tag obj
-    tags[ts + '-' + c] = { x: x, y: y, ts: ts }
+    tags['tracker-' + (c+1)] = { x: x, y: y, ts: ts }
   }
 }
 
