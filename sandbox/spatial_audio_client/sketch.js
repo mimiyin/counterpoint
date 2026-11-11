@@ -2,11 +2,13 @@ import { io } from '/socket.io/socket.io.esm.min.js';
 import { startResonance, updateRoom, placeListenerOnFloor, turnListener } from './resonance.js';
 import { BellMode } from './modes/bell.js';
 import { BoundaryMode } from './modes/boundary.js';
+import { CueMode } from './modes/cue.js';
 
 // What the phone plays: uncomment one
-const MODE = 'bell';
+// const MODE = 'bell';
 // const MODE = 'boundary';
-const MODES = { bell: BellMode, boundary: BoundaryMode };
+const MODE = 'cue';
+const MODES = { bell: BellMode, boundary: BoundaryMode, cue: CueMode };
 const mode = new MODES[MODE]();
 
 const MAX_TILT_DEGREES = 70;
