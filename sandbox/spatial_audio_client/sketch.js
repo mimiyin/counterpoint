@@ -8,7 +8,7 @@ let pulseTimer = null;
 // Spatial audio with Resonance Audio, for headphones. Resonance works in metres:
 // x to the right, y up, -z forward, with the centre of the room at (0, 0, 0).
 // The listener always faces forward, the top of the controller's canvas.
-const ROOM_HEIGHT_M = 3;
+const ROOM_HEIGHT_M = 4;
 const EAR_HEIGHT_M = 1.6;
 const ROOM_MATERIALS = {
   left: 'plaster-smooth', right: 'plaster-smooth',

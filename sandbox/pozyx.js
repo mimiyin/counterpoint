@@ -5,11 +5,11 @@ const WIDTH = 3840;
 const HEIGHT = 4320;
 
 // Auto-pilot
-let pozyx_on = true;
+let pozyx_on = false;
 
 // Position source: uncomment one
-//const SOURCE = 'pozyx';
-const SOURCE = 'vive';
+const SOURCE = 'pozyx';
+// const SOURCE = 'vive';
 
 // VIVE calibration saved by the grid_vive_calibration sketch, in sandbox/config/
 const VIVE_CONFIG = '/config/grid_vive_calibration_2026-11-06_16-05-09.json';
