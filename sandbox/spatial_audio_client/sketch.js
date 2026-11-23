@@ -5,14 +5,16 @@ import { BoundaryMode } from './modes/boundary.js';
 import { CueMode } from './modes/cue.js';
 import { SteerWithVolumeMode } from './modes/steer_with_volume.js';
 import { SteerWithRhythmMode } from './modes/steer_with_rhythm.js';
+import { SteerWithPanMode } from './modes/steer_with_pan.js';
 
 // What the phone plays: uncomment one
 // const MODE = 'bell';
 // const MODE = 'boundary';
 // const MODE = 'cue';
 // const MODE = 'steer_with_volume';
-const MODE = 'steer_with_rhythm';
-const MODES = { bell: BellMode, boundary: BoundaryMode, cue: CueMode, steer_with_volume: SteerWithVolumeMode, steer_with_rhythm: SteerWithRhythmMode };
+// const MODE = 'steer_with_rhythm';
+const MODE = 'steer_with_pan';
+const MODES = { bell: BellMode, boundary: BoundaryMode, cue: CueMode, steer_with_volume: SteerWithVolumeMode, steer_with_rhythm: SteerWithRhythmMode, steer_with_pan: SteerWithPanMode };
 const mode = new MODES[MODE]();
 
 const MAX_TILT_DEGREES = 70;
