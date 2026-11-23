@@ -58,7 +58,11 @@ function draw() {
   for (let m in movers) {
     let mover = movers[m];
     //mover.play(target);
+<<<<<<< Updated upstream
     //mover.amp(target);
+=======
+    mover.amp(target);
+>>>>>>> Stashed changes
     mover.sing(target);
     mover.display();
   }
