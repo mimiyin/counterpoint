@@ -3,12 +3,14 @@ import { startResonance, updateRoom, placeListenerOnFloor, turnListener } from '
 import { BellMode } from './modes/bell.js';
 import { BoundaryMode } from './modes/boundary.js';
 import { CueMode } from './modes/cue.js';
+import { SteerWithVolumeMode } from './modes/steer_with_volume.js';
 
 // What the phone plays: uncomment one
 // const MODE = 'bell';
 // const MODE = 'boundary';
-const MODE = 'cue';
-const MODES = { bell: BellMode, boundary: BoundaryMode, cue: CueMode };
+// const MODE = 'cue';
+const MODE = 'steer_with_volume';
+const MODES = { bell: BellMode, boundary: BoundaryMode, cue: CueMode, steer_with_volume: SteerWithVolumeMode };
 const mode = new MODES[MODE]();
 
 const MAX_TILT_DEGREES = 70;
@@ -37,7 +39,7 @@ function setup() {
 }
 
 function draw() {
-  if (started) mode.update();
+  if (started) mode.update(turnDegrees());
   render();
 }
 
@@ -85,6 +87,7 @@ function setCurrentHeadingAsForward() {
 //   - 180   -180 to 179
 // e.g. 350 -> 350 -> 890 -> 170 -> -10 (turned left 10)
 function turnDegrees() {
+  if (phoneHeadingDegrees === null) return 0;  // no motion sensor yet: assume facing forward
   return ((phoneHeadingDegrees - forwardHeadingDegrees) % 360 + 540) % 360 - 180;
 }
 

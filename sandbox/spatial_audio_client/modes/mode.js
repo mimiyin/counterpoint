@@ -2,6 +2,6 @@ export class Mode {
   preload() {}
   setup() {}
   onScene(scene) {}
-  update() {}
+  update(turnDegrees) {}
   status() { return ''; }
 }
