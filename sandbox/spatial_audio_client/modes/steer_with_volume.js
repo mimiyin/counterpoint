@@ -1,4 +1,5 @@
 import { Mode } from './mode.js';
+import { targetOffsetDegrees } from './target_offset.js';
 
 // Steer with volume mode: a steady tone in the ear on the target's side, louder the further the target is to the side.
 // Silent when facing the target. Not spatial, the ear is the direction.
@@ -50,15 +51,4 @@ export class SteerWithVolumeMode extends Mode {
     if (Math.abs(offset) < TONE_SILENT_BELOW_DEG) return 'Target ahead';
     return offset > 0 ? 'Target on the right' : 'Target on the left';
   }
-}
-
-// right positive, left negative, ahead 0, behind 180 or -180
-function targetOffsetDegrees(scene, turnDegrees) {
-  if (!scene || !scene.listener) return null;
-
-  const target = scene.sources.find((src) => src.id === 'target');
-  if (!target) return null;
-
-  const towardsTarget = Math.atan2(target.x - scene.listener.x, -(target.z - scene.listener.z)) * 180 / Math.PI;
-  return ((towardsTarget - turnDegrees) % 360 + 540) % 360 - 180;
 }
