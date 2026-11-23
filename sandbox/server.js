@@ -244,7 +244,7 @@ io.on('connection', function (socket) {
 });
 
 // TD channel name -> unified field name. Anything not listed keeps its name.
-const VIVE_FIELDS = { tx: 'x', ty: 'y', tz: 'z' };
+const VIVE_FIELDS = { tx: 'x', ty: 'y', tz: 'z', rx: 'rx', ry: 'ry', rz: 'rz'};
 
 // Group flat "id:channel" keys into one object per tracker
 function parseTrackers(channels) {

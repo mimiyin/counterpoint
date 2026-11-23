@@ -1,4 +1,4 @@
-// The agreed format of tracker data: {ts, trackers: [{id, x, y, z, ...}, ...]}
+// The agreed format of tracker data: {ts, trackers: [{id, x, y, z, rx?, ry?, rz?, ...}, ...]}
 
 // A message needs a list of tracker entries, and every entry must be valid
 export function isValidMessage(message) {
