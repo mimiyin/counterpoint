@@ -1,7 +1,7 @@
 import { Mode } from './mode.js';
 import { createSpatialSource, placeSourceOnFloor } from '../resonance.js';
 
-// Bell mode: the bell placed by the controller, in spatial audio
+// Bell mode: a bell sounds from the controller's target, in spatial audio
 
 const PULSE_MS = 1500;
 
@@ -25,7 +25,7 @@ export class BellMode extends Mode {
   }
 
   onScene(s) {
-    const sourceData = s.sources.find((src) => src.id === 'bell');
+    const sourceData = s.sources.find((src) => src.id === 'target');
     if (sourceData) {
       placeSourceOnFloor(this.bellSource, sourceData);
     }

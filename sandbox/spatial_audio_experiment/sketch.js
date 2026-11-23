@@ -17,8 +17,8 @@ let store;
 const FLOOR_WIDTH_M = 7; // real width of the projected floor, in metres; only used without a calibration config
 let metresPerPixel;
 
-let bellPos = null; // canvas pixels, where the bell was last clicked
-let bellPlaying = false;
+let targetPos = null; // canvas pixels, where the target was last clicked
+let targetPlaying = false;
 let listenerPos = null; // canvas pixels, from the tracker
 
 // The whole spatial audio scene is sent to the server this often, for the participant's phone
@@ -55,7 +55,7 @@ function sendSpatialAudioScene() {
     ts: Date.now() / 1000,
     floor: { width: width * metresPerPixel, depth: height * metresPerPixel },
     listener: listenerPos ? toFloor(listenerPos.x, listenerPos.y) : null,
-    sources: bellPos ? [{ id: 'bell', sound: 'bell', ...toFloor(bellPos.x, bellPos.y), playing: bellPlaying }] : [],
+    sources: targetPos ? [{ id: 'target', ...toFloor(targetPos.x, targetPos.y), playing: targetPlaying }] : [],
   });
 }
 
@@ -87,16 +87,16 @@ function render() {
 
   display_grid();
   display_tracker();
-  display_bell();
+  display_target();
 }
 
-function display_bell() {
-  if (!bellPos) return;
+function display_target() {
+  if (!targetPos) return;
 
   push();
   noStroke();
-  fill(bellPlaying ? 'orange' : 'gray');
-  circle(bellPos.x, bellPos.y, DIAM / 2);
+  fill(targetPlaying ? 'orange' : 'gray');
+  circle(targetPos.x, targetPos.y, DIAM / 2);
   pop();
 }
 
@@ -142,12 +142,12 @@ function getCell(x, y) {
 }
 
 function mousePressed() {
-  bellPos = { x: mouseX, y: mouseY };
-  bellPlaying = true;
+  targetPos = { x: mouseX, y: mouseY };
+  targetPlaying = true;
 }
 
 function mouseReleased() {
-  bellPlaying = false;
+  targetPlaying = false;
 }
 
 // p5 looks for these on window, and a module does not put them there
