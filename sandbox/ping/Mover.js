@@ -22,7 +22,7 @@ class Mover {
         return dist(this.x, this.y, target.x, target.y);
     }
     load(sound) {
-        this.ping = sound;
+      this.ping = sound;
     }
     play(target) {
         let d = this.calc_d(target);
@@ -35,9 +35,12 @@ class Mover {
         this.c++;
     }
     sing(target) {
-        let d = this.calc_d(target);
+        let d = this.y - target.y; //this.calc_d(target);
         let r = map(d, 0, height, 0, RATIOS.length);
+        r = constrain(r, 0, RATIOS.length);
         let f = RATIOS[floor(r)] * BASE;
+        f = constrain(f, BASE, 4*BASE) || BASE;
+        console.log(RATIOS.length, floor(r), f);
         this.osc.amp(1);
         this.osc.freq(f);
     }

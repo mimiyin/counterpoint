@@ -4,7 +4,8 @@ let target = {};
 let movers = {};
 
 // DIATONIC SCALE: MAJOR
-const RATIOS = [1, 1.125, 1.25, 1.34, 1.5, 1.67, 1.875, 2];
+const RATIOS = [1, 1.125, 1.25, 1.34, 1.5, 1.67, 1.875, 2, 2.25, 2.5, 2.67, 3, 3.34, 3.75, 4];
+//const RATIOS = [1, 1.125, 1.25, 1.34, 1.5, 1.67, 1.875, 2];
 const BASE = 220;
 
 // Activate audio context
@@ -16,7 +17,7 @@ async function setup() {
   target.x = width/2;
   target.y = 0;
   if (!pozyx_on) init_movers(1);
-  //pozyx();
+  pozyx();
   ping = await loadSound('ping.m4a');
 }
 
@@ -57,14 +58,14 @@ function draw() {
   for (let m in movers) {
     let mover = movers[m];
     //mover.play(target);
-    mover.amp(target);
-    //mover.sing(target);
+    //mover.amp(target);
+    mover.sing(target);
     mover.display();
   }
 
   // Control target with mouse
-  target.x = mouseX;
-  target.y = mouseY;
+  //target.x = mouseX;
+  //target.y = mouseY;
 
   // Display target
   fill('red');
