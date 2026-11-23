@@ -9,6 +9,14 @@ const ROOM_MATERIALS = {
   down: 'polished-concrete-or-tile', up: 'acoustic-ceiling-tiles',
 };
 
+// Exaggerating front and back
+const FRONT_LOWPASS_HZ = 20000;
+const BACK_LOWPASS_HZ = 2500;
+const PRESENCE_HZ = 4000;         // the range the ears' shape boosts for sounds in front
+const FRONT_PRESENCE_DB = 6;
+const BACK_LEVEL_DB = -4;         // a sound behind is this much quieter
+const FRONT_BACK_GLIDE_S = 0.03;  // the filters glide over this long as the sound moves round the listener
+
 let scene;
 let floorSizeInMetres = null;
 
@@ -46,6 +54,37 @@ export function createSpatialSource(sound) {
   sound.disconnect();
   sound.connect(source.input);
   return source;
+}
+
+export function createFrontBackSource(sound) {
+  const context = getAudioContext();
+
+  const lowpass = context.createBiquadFilter();
+  lowpass.type = 'lowpass';
+  const presence = context.createBiquadFilter();
+  presence.type = 'peaking';
+  presence.frequency.value = PRESENCE_HZ;
+  const level = context.createGain();
+
+  const source = scene.createSource();
+  sound.disconnect();
+  sound.connect(lowpass);
+  lowpass.connect(presence);
+  presence.connect(level);
+  level.connect(source.input);
+
+  function setFrontness(frontness) {
+    const front = (frontness + 1) / 2;  // 0 behind, 1 ahead
+    const now = context.currentTime;
+
+    // The cutoff moves by ratio, so it is blended on a log scale
+    const cutoffHz = BACK_LOWPASS_HZ * Math.pow(FRONT_LOWPASS_HZ / BACK_LOWPASS_HZ, front);
+    lowpass.frequency.setTargetAtTime(cutoffHz, now, FRONT_BACK_GLIDE_S);
+    presence.gain.setTargetAtTime(FRONT_PRESENCE_DB * front, now, FRONT_BACK_GLIDE_S);
+    level.gain.setTargetAtTime(Math.pow(10, BACK_LEVEL_DB * (1 - front) / 20), now, FRONT_BACK_GLIDE_S);
+  }
+
+  return { source, setFrontness };
 }
 
 export function placeSourceOnFloor(source, floorPos) {
