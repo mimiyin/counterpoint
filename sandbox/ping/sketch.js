@@ -34,7 +34,7 @@ function createOsc() {
 // Create mover with soundfile and oscillator
 function createMover(id, pos) {
   let osc = createOsc();
-  let mover = new Mover(id, pos.x, pos.y, osc);
+  let mover = new Mover(id, pos.x, pos.y, pos.a, osc);
   load(mover);
   return mover;
 }
@@ -45,17 +45,26 @@ async function load(mover) {
   mover.load(sample);
 }
 
+let min_a = 0;
+let max_a = 0;
+
 function draw() {
   background(0);
 
   // Populate movers with tag data
   for (let id in tags) {
     let pos = tags[id];
-    if (id in movers) movers[id].update(pos.x, pos.y);
+    let a = pos.a;
+    min_a = a < min_a ? a : min_a;
+    max_a = a > max_a ? a : max_a;
+    console.log(min_a, max_a);
+    if (id in movers) movers[id].update(pos.x, pos.y, pos.a);
     else movers[id] = createMover(id, pos);
   }
 
   for (let m in movers) {
+    console.log(m);
+    if(m == 'tracker2') break;
     let mover = movers[m];
     //mover.play(target);
     //mover.amp(target);
@@ -63,6 +72,10 @@ function draw() {
     mover.display();
   }
 
+  if('tracker2' in movers) {
+    target.x = movers['tracker2'].x;
+    target.y = movers['tracker2'].y;
+  }
   // Control target with mouse
   //target.x = mouseX;
   //target.y = mouseY;
@@ -83,25 +96,25 @@ function keyPressed() {
   // Manually move movers
   switch (key) {
     case LEFT_ARROW:
-      tags['tracker-1'].x -= 10;
+      tags['tracker1'].x -= 10;
       break;
     case RIGHT_ARROW:
-      tags['tracker-1'].x += 10;
+      tags['tracker1'].x += 10;
       break;
     case DOWN_ARROW:
-      tags['tracker-1'].y += 10;
+      tags['tracker1'].y += 10;
       break;
     case UP_ARROW:
-      tags['tracker-1'].y -= 10;
+      tags['tracker1'].y -= 10;
       break;
 
     case 'a':
-      let _a = wrap(movers['tracker-1'].a - 0.1);
-      movers['tracker-1'].a = _a;
+      let _a = wrap(movers['tracker1'].a - 0.1);
+      movers['tracker1'].a = _a;
       break;
     case 'd':
-      let a_ = wrap(movers['tracker-1'].a + 0.1);
-      movers['tracker-1'].a = a_;
+      let a_ = wrap(movers['tracker1'].a + 0.1);
+      movers['tracker1'].a = a_;
       break;
   }
 }

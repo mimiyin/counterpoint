@@ -5,11 +5,11 @@ const WIDTH = 3840;
 const HEIGHT = 4320;
 
 // Auto-pilot
-let pozyx_on = false;
+let pozyx_on = true;
 
 // Position source: uncomment one
-const SOURCE = 'pozyx';
-// const SOURCE = 'vive';
+//const SOURCE = 'pozyx';
+const SOURCE = 'vive';
 
 // VIVE calibration saved by the grid_vive_calibration sketch, in sandbox/config/
 const VIVE_CONFIG = '/config/grid_vive_calibration_2026-11-06_16-05-09.json';
@@ -137,6 +137,7 @@ async function listen_vive() {
           py: exists ? tags[raw.id].y : pos.z,
           x: pos.x,
           y: pos.z,
+          a : raw.ry
         };
       }
     }
@@ -229,7 +230,7 @@ function init_movers(count) {
     let y = height/2;
     
     // Create tag obj
-    tags['tracker-' + (c+1)] = { x: x, y: y, ts: ts }
+    tags['tracker' + (c+1)] = { x: x, y: y, ts: ts }
   }
 }
 
