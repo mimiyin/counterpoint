@@ -5,12 +5,12 @@ const COUNT_TH = 10; //60 * 5;
 
 
 class Mover {
-    constructor(id, x, y, osc) {
+    constructor(id, x, y, a, osc) {
         this.id = id;
         this.update(x,  y);
         this.osc = osc;
         this.c = 0;
-        this.a = PI;
+        this.a = a/100;
     }
     
     // Angle from mover to target
@@ -77,9 +77,11 @@ class Mover {
         this.osc.amp(amp);
     }
 
-    update(x, y) {
+    update(x, y, a) {
         this.x = x;
         this.y = y;
+        a = map(a, -270, 90, -180, 180);
+        this.a = map(a, -180, 180, PI, -PI);
     }
 
     display() {
