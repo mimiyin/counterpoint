@@ -4,8 +4,8 @@ let target = {};
 let movers = {};
 
 // DIATONIC SCALE: MAJOR
-const RATIOS = [1, 1.125, 1.25, 1.34, 1.5, 1.67, 1.875, 2, 2.25, 2.5, 2.67, 3, 3.34, 3.75, 4];
-//const RATIOS = [1, 1.125, 1.25, 1.34, 1.5, 1.67, 1.875, 2];
+//const RATIOS = [1, 1.125, 1.25, 1.34, 1.5, 1.67, 1.875, 2, 2.25, 2.5, 2.67, 3, 3.34, 3.75, 4];
+const RATIOS = [1, 1.125, 1.25, 1.34, 1.5, 1.67, 1.875, 2];
 const BASE = 220;
 
 // Activate audio context
@@ -58,7 +58,7 @@ function draw() {
   for (let m in movers) {
     let mover = movers[m];
     //mover.play(target);
-    mover.amp(target);
+    //mover.amp(target);
     mover.sing(target);
     mover.display();
   }
