@@ -67,8 +67,8 @@ function draw() {
     if(m == 'tracker2') break;
     let mover = movers[m];
     //mover.play(target);
-    //mover.amp(target);
-    mover.sing(target);
+    mover.amp(target);
+    //mover.sing(target);
     mover.display();
   }
 

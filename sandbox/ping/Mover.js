@@ -69,10 +69,12 @@ class Mover {
         let cwt2a = this.calc_t2a(target, 'cw');
         let ccwt2a = this.calc_t2a(target, 'ccw');
         let t2a = min(cwt2a, ccwt2a);
-        let amp = map(abs(t2a), 0, HALF_PI, 1, 0);
+        
+        let d = this.calc_d(target);
+        let amp = map(d, 100, height/2, 1, 0.5);
+        amp =  t2a < QUARTER_PI ? amp : 0; //map(abs(t2a), 0, HALF_PI, 1, 0);
 
-        //let d = this.calc_d(target);
-        //let amp = map(d, 0, height, 1, 0);
+        
         amp = constrain(amp, 0, 1);
         this.osc.amp(amp);
     }
