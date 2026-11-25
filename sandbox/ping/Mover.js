@@ -5,12 +5,13 @@ const COUNT_TH = 10; //60 * 5;
 
 
 class Mover {
-    constructor(id, x, y, a, osc) {
+    constructor(id, x, y, a, tone, bass) {
         this.id = id;
         this.update(x,  y);
-        this.osc = osc;
+        this.tone = tone;
+        this.bass = bass;
         this.c = 0;
-        this.a = a/100;
+        this.a = -PI/2;
     }
     
     // Angle from mover to target
@@ -62,21 +63,33 @@ class Mover {
         // Convert ratio to frequency
         r = constrain(r, 0, RATIOS.length);
         let f = (RATIOS[floor(r)] * BASE) || BASE;
-        this.osc.amp(1);
-        this.osc.freq(f);
+        this.tone.amp(1);
+        this.tone.freq(f);
     }
     amp(target) {
-        let cwt2a = this.calc_t2a(target, 'cw');
-        let ccwt2a = this.calc_t2a(target, 'ccw');
+        let cwt2a = this.calc_t2a(target, 'cw'); // Clockwise delta
+        let ccwt2a = this.calc_t2a(target, 'ccw'); // Counter-clockwise delta
         let t2a = min(cwt2a, ccwt2a);
-        
-        let d = this.calc_d(target);
-        let amp = map(d, 100, height/2, 1, 0.5);
-        amp =  t2a < QUARTER_PI ? amp : 0; //map(abs(t2a), 0, HALF_PI, 1, 0);
 
+        // Center delta on zero
+        let _t2a = cwt2a < ccwt2a ? t2a : -t2a; 
+
+        // Target moves CW: pitch slides up
+        // Target moves CCW: pitch slides down       
+        let f = map(_t2a, -PI/2, PI/2, BASE * 0.95, BASE * 1.1);
+        this.tone.freq(f);
         
+        // Map amp of tone to direction when facing target
+        let amp = map(abs(_t2a), 0, PI/2, 1, 0); 
+        amp = constrain(amp, 0, 1);       
+        this.tone.amp(amp);
+
+        // Calc distance to target to activate alarm when too close
+        let d = this.calc_d(target);
+        amp = map(d, 0, 100, 1, 0); // Too close @100 pixels
         amp = constrain(amp, 0, 1);
-        this.osc.amp(amp);
+        amp = abs(_t2a) < 0.1 ? amp : 0; // Only activate when facing target
+        this.bass.amp(amp);
     }
 
     update(x, y, a) {
