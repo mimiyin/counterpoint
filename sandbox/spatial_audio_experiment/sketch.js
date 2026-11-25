@@ -7,7 +7,7 @@ const DIAM = 100;
 let w, h; // cell dimensions
 
 const SAMPLE_SIZE = 15;
-const VIVE_CONFIG = '../config/grid_vive_calibration_2026-10-28_15-30-05.json';
+const VIVE_CONFIG = '../config/grid_vive_calibration_2026-11-06_16-05-09.json';
 
 let config;
 let store;
@@ -18,7 +18,7 @@ const FLOOR_WIDTH_M = 7; // real width of the projected floor, in metres; only u
 let metresPerPixel;
 
 let targetPos = null; // canvas pixels, where the target was last clicked
-let targetPlaying = false;
+let targetPlaying = true;
 let listenerPos = null; // canvas pixels, from the tracker
 
 // The whole spatial audio scene is sent to the server this often, for the participant's phone
@@ -26,7 +26,7 @@ const SEND_MS = 1000 / 30;
 let socket;
 
 function preload() {
-  // config = loadJSON(VIVE_CONFIG);
+  config = loadJSON(VIVE_CONFIG);
 }
 
 function setup() {
@@ -34,13 +34,13 @@ function setup() {
   w = width / COLS;
   h = height / ROWS;
 
-  // store = new TrackerStore(createRoomTransformerFromConfig(config));
-  // connectSocket(store);
+  store = new TrackerStore(createRoomTransformerFromConfig(config));
+  connectSocket(store);
 
   // A fake tracker moved with the W A S D keys, starting at tracker (0, 0)
   // With identityTransformer, tracker units are canvas pixels, so the speed is pixels per second
-  store = new TrackerStore(identityTransformer);
-  connectFake(store, keyboardRoomTracker(400));
+  // store = new TrackerStore(identityTransformer);
+  // connectFake(store, keyboardRoomTracker(400));
 
   // From the calibration when there is one, assuming the tracker reports metres
   metresPerPixel = config ? metresPerPixelFromConfig(config) : FLOOR_WIDTH_M / width;
@@ -66,6 +66,7 @@ function toFloor(x, y) {
 
 function draw() {
   updateListener();
+  updateTarget();
   render();
 }
 
@@ -79,6 +80,19 @@ function updateListener() {
 
 function getTracker() {
   const tracker = Object.values(store.getTrackers())[0];
+  return tracker && !tracker.isStale() ? tracker : null;
+}
+
+function updateTarget() {
+  const target = getTarget();
+  const pos = target ? target.getPosByAvg(SAMPLE_SIZE) : null;
+  if (pos) {
+    targetPos = { x: pos.x, y: pos.z };
+  }
+}
+
+function getTarget() {
+  const tracker = Object.values(store.getTrackers())[1];
   return tracker && !tracker.isStale() ? tracker : null;
 }
 
