@@ -5,7 +5,7 @@ const WIDTH = 3840;
 const HEIGHT = 4320;
 
 // Auto-pilot
-let pozyx_on = true;
+let pozyx_on = false;
 
 // Position source: uncomment one
 //const SOURCE = 'pozyx';
@@ -230,7 +230,7 @@ function init_movers(count) {
     let y = height/2;
     
     // Create tag obj
-    tags['tracker' + (c+1)] = { x: x, y: y, ts: ts }
+    tags['tracker' + (c+1)] = { x: x, y: y, a : PI, ts: ts }
   }
 }
 

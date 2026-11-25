@@ -14,18 +14,18 @@ let ping;
 
 async function setup() {
   createCanvas(windowWidth, windowHeight);
-  target.x = width/2;
+  target.x = width / 2;
   target.y = 0;
-  if (!pozyx_on) init_movers(1);
+  if (!pozyx_on) init_movers(2);
   pozyx();
   ping = await loadSound('ping.m4a');
 }
 
 // Create oscillator
-function createOsc() {
+function createOsc(type, octave) {
   let osc = new p5.Oscillator();
-  osc.setType('sine');
-  osc.freq(BASE);
+  osc.setType(type);
+  osc.freq(BASE * octave);
   osc.amp(0);
   osc.start();
   return osc;
@@ -33,8 +33,9 @@ function createOsc() {
 
 // Create mover with soundfile and oscillator
 function createMover(id, pos) {
-  let osc = createOsc();
-  let mover = new Mover(id, pos.x, pos.y, pos.a, osc);
+  let tone = createOsc('sine', 1);
+  let bass = createOsc('square', 3.67);
+  let mover = new Mover(id, pos.x, pos.y, pos.a, tone, bass);
   load(mover);
   return mover;
 }
@@ -55,16 +56,15 @@ function draw() {
   for (let id in tags) {
     let pos = tags[id];
     let a = pos.a;
+    if(id == 'tracker1') console.log(a);
     min_a = a < min_a ? a : min_a;
     max_a = a > max_a ? a : max_a;
-    console.log(min_a, max_a);
     if (id in movers) movers[id].update(pos.x, pos.y, pos.a);
     else movers[id] = createMover(id, pos);
   }
 
   for (let m in movers) {
-    console.log(m);
-    if(m == 'tracker2') break;
+    if (m == 'tracker2') break;
     let mover = movers[m];
     //mover.play(target);
     mover.amp(target);
@@ -72,7 +72,11 @@ function draw() {
     mover.display();
   }
 
-  if('tracker2' in movers) {
+  if ('tracker2' in movers) {
+    if (!pozyx_on) {
+      movers['tracker2'].x = mouseX;
+      movers['tracker2'].y = mouseY;
+    }
     target.x = movers['tracker2'].x;
     target.y = movers['tracker2'].y;
   }
@@ -88,7 +92,7 @@ function draw() {
 function keyPressed() {
 
   // Activate audio context
-  if(!started) {
+  if (!started) {
     ping.play();
     started = true;
   }
@@ -109,19 +113,21 @@ function keyPressed() {
       break;
 
     case 'a':
-      let _a = wrap(movers['tracker1'].a - 0.1);
-      movers['tracker1'].a = _a;
+      tags['tracker1'].a -=10;
+      wrap(tags['tracker1'].a);
       break;
     case 'd':
-      let a_ = wrap(movers['tracker1'].a + 0.1);
-      movers['tracker1'].a = a_;
+      tags['tracker1'].a += 10;
+      wrap(tags['tracker1'].a);
       break;
   }
+
+  //console.log(tags['tracker1'].a);
 }
 
 function wrap(a) {
-  let d2PI = abs(abs(a)-PI);
-  if(a > PI) a = -PI + d2PI;
-  else if(a < -PI) a = PI - d2PI;
+  let d2PI = abs(abs(a) - PI);
+  if (a > PI) a = -PI + d2PI;
+  else if (a < -PI) a = PI - d2PI;
   return a;
 }
